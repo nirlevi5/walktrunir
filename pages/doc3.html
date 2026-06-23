@@ -137,6 +137,19 @@
     .alt strong    { color: var(--accent5); }
 
     .sec { margin-bottom: 48px; }
+
+    @media (max-width: 700px) {
+      .phases-bar { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 32px; }
+      .phase-section { margin-bottom: 36px; }
+      .phase-title { align-items: flex-start; }
+      .mode-grid, .tradeoff-grid { grid-template-columns: minmax(0, 1fr); }
+      .phase-chip, .step-block, .mode-card, .tradeoff-card, .flow-note { min-width: 0; }
+      .step-body { min-width: 0; }
+      .protocol-step { align-items: stretch; }
+      .tradeoff-row { flex-direction: column; gap: 4px; }
+      .tradeoff-vs { display: none; }
+      pre.code-block { max-width: 100%; font-size: 0.7rem; }
+    }
   </style>
 </head>
 <body>

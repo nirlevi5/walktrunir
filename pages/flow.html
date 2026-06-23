@@ -66,6 +66,13 @@
     .note-success li::before { color: var(--accent4); }
     .note-failure h3 { color: var(--accent5); }
     .note-failure li::before { color: var(--accent5); }
+
+    @media (max-width: 700px) {
+      .legend-row { justify-content: flex-start; gap: 12px; margin-bottom: 28px; }
+      .diagram-wrap { margin-bottom: 32px; }
+      .notes-grid { grid-template-columns: minmax(0, 1fr); }
+      .note-card { padding: 16px; }
+    }
   </style>
 </head>
 <body>
@@ -97,7 +104,7 @@
     </div>
   </div>
 
-  <div class="diagram-wrap">
+  <div class="diagram-wrap diagram-zoom">
   <svg id="flow" viewBox="0 0 1080 1290" width="1080"
        xmlns="http://www.w3.org/2000/svg"
        font-family="'Segoe UI',system-ui,sans-serif">
@@ -302,5 +309,6 @@
 
 </div>
 <script src="../assets/nav.js"></script>
+<script src="../assets/diagram-zoom.js"></script>
 </body>
 </html>

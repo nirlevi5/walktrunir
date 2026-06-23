@@ -17,7 +17,7 @@
   const brand = document.createElement('a');
   brand.className = 'nav-brand';
   brand.href = 'index.html';
-  brand.textContent = 'Walktru · Home Assignment';
+  brand.textContent = 'WALKTRU';
   nav.appendChild(brand);
 
   const links = document.createElement('div');

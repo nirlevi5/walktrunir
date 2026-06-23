@@ -160,6 +160,61 @@ code {
   border-radius: 4px;
   font-size: 0.78rem;
   color: var(--accent2);
+  overflow-wrap: anywhere;
+}
+
+/* ── Diagram pinch/drag zoom ── */
+.diagram-zoom {
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  overscroll-behavior: contain;
+}
+
+.diagram-zoom.is-dragging {
+  cursor: grabbing;
+}
+
+.diagram-zoom svg {
+  transform-origin: 0 0;
+  will-change: transform;
+  user-select: none;
+}
+
+.diagram-zoom:not(.diagram-zoom-ready) svg {
+  max-width: 100%;
+}
+
+.diagram-zoom-ready {
+  position: relative;
+}
+
+.diagram-zoom-ready svg {
+  max-width: none;
+}
+
+@media (max-width: 700px) {
+  .page-content {
+    padding: 28px 16px;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .subtitle {
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  .flow-note {
+    padding: 16px;
+  }
+
+  .flow-step {
+    gap: 10px;
+  }
 }
 
 /* ── Flow note (shared between doc1 + doc3) ── */

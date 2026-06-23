@@ -127,6 +127,30 @@
     }
     .status-done { background: var(--accent4); }
     .status-wip  { background: var(--accent3); }
+
+    @media (max-width: 700px) {
+      .hero {
+        margin: 42px auto 40px;
+      }
+
+      .hero h1 {
+        font-size: 1.55rem;
+      }
+
+      .problem-block {
+        padding: 18px;
+        margin-bottom: 40px;
+      }
+
+      .doc-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+      }
+
+      .doc-card {
+        padding: 18px;
+      }
+    }
   </style>
 </head>
 <body>

@@ -120,6 +120,17 @@
     .c3 { background: var(--accent3); }
     .c4 { background: var(--accent4); }
     .c5 { background: var(--accent5); }
+
+    @media (max-width: 700px) {
+      .erd-container { margin-bottom: 36px; }
+      .legend { gap: 10px; align-items: flex-start; justify-content: flex-start; }
+      .cards-container { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .card { min-width: 0; }
+      .card-header, .card-purpose { padding-left: 14px; padding-right: 14px; }
+      .card { overflow-x: auto; }
+      table.schema { min-width: 620px; }
+      table.schema thead th, table.schema td { padding-left: 12px; padding-right: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -138,7 +149,7 @@
     <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div>Relationship edge</div>
   </div>
 
-  <div class="erd-wrapper">
+  <div class="erd-wrapper diagram-zoom">
     <svg id="erd" viewBox="0 0 1000 660" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <marker id="arr-blue" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
@@ -389,5 +400,6 @@
 
 </div>
 <script src="../assets/nav.js"></script>
+<script src="../assets/diagram-zoom.js"></script>
 </body>
 </html>

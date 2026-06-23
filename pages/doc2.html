@@ -55,6 +55,17 @@
     .layer-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.67rem; font-weight: 700; letter-spacing: 0.05em; }
 
     .sec { margin-bottom: 48px; }
+
+    @media (max-width: 700px) {
+      .arch-container { margin-bottom: 36px; }
+      .comp-grid, .iso-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .comp-card, .iso-card { min-width: 0; }
+      .comp-header { align-items: flex-start; }
+      .comp-name { overflow-wrap: anywhere; }
+      .table-wrap { margin-left: -16px; margin-right: -16px; padding: 0 16px; }
+      table.decisions, table.mapping { min-width: 680px; }
+      .iso-card { padding: 14px; }
+    }
   </style>
 </head>
 <body>
@@ -64,7 +75,7 @@
 <p class="subtitle">Services for semantic propagation · storage · orchestration · tenant isolation</p>
 
 <!-- ── Architecture Diagram ── -->
-<div class="arch-container sec">
+<div class="arch-container sec diagram-zoom">
   <p class="section-title">Architecture Overview</p>
   <svg id="arch" viewBox="0 0 820 770" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -440,5 +451,6 @@
 
 </div>
 <script src="../assets/nav.js"></script>
+<script src="../assets/diagram-zoom.js"></script>
 </body>
 </html>
