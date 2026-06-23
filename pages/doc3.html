@@ -157,6 +157,7 @@
 
 <h1>Document 3 — Update Flow</h1>
 <p class="subtitle">End-to-end lifecycle of correcting <code>event_timestamp</code> · from engineer action to consistent data</p>
+<p class="subtitle" style="margin-top:-18px;font-size:0.82rem;">Uses <code>datasets</code> for <code>pipeline_type</code> routing and <code>current_materialization_uri</code> promotion after validation.</p>
 
 <!-- ── Phase overview ── -->
 <div class="phases-bar">
@@ -329,7 +330,7 @@
       <div class="step-body">
         <p>The Lambda bulk-inserts the full propagation plan:</p>
         <p><strong style="color:var(--text)">1.</strong> One row in <code>propagation_events</code>: anchors <code>old_definition_id</code>, <code>new_definition_id</code>, sets <code>affected_dataset_count</code> and <code>status = 'in_progress'</code>.</p>
-        <p><strong style="color:var(--text)">2.</strong> One row per affected dataset in <code>propagation_tasks</code>: <code>topological_depth</code>, <code>blocked_by_task_ids</code>, <code>pipeline_type</code> copied from the <code>datasets</code> table. Status is <code>'pending'</code> for depth-0 tasks, <code>'blocked'</code> for all others.</p>
+        <p><strong style="color:var(--text)">2.</strong> One row per affected dataset in <code>propagation_tasks</code>: <code>topological_depth</code>, <code>blocked_by_task_ids</code>, <code>recompute_reason</code>, and <code>pipeline_type</code> copied from the <code>datasets</code> table. Status is <code>'pending'</code> for depth-0 tasks, <code>'blocked'</code> for all others.</p>
         <p><strong style="color:var(--text)">3.</strong> Enqueues only the depth-0 tasks to SQS. All deeper tasks stay in the database as <code>blocked</code> — untouched until their upstream tasks complete.</p>
         <p>An operator can now query <code>propagation_tasks</code> to see the full scope — e.g., 347 datasets, their depths, and their blocking relationships — before a single recomputation job has run.</p>
       </div>
@@ -359,11 +360,11 @@
         </div>
         <div class="step-block">
           <div class="step-header" style="background:rgba(16,185,129,0.08)"><div class="step-num" style="background:var(--accent4)">2</div><h3>Start Glue / EMR job</h3></div>
-          <div class="step-body"><p>Job parameterized with <code>dataset_id</code> and <code>new_definition_id</code>. Reads the same upstream sources but interprets <code>event_timestamp</code> as an ISO 8601 date — affecting date-range filtering, timezone handling, and aggregation logic. Rewrites materialization to <code>s3://data-platform/{tenant_id}/datasets/{dataset_id}/</code>.</p></div>
+          <div class="step-body"><p>Job parameterized with <code>dataset_id</code> and <code>new_definition_id</code>. Reads the same upstream sources but interprets <code>event_timestamp</code> as an ISO 8601 date — affecting date-range filtering, timezone handling, and aggregation logic. Writes corrected output to a staging prefix such as <code>s3://data-platform/{tenant_id}/datasets/{dataset_id}/propagations/{event_id}/</code>; readers stay on the old <code>datasets.current_materialization_uri</code> until promotion.</p></div>
         </div>
         <div class="step-block">
           <div class="step-header" style="background:rgba(16,185,129,0.08)"><div class="step-num" style="background:var(--accent4)">3</div><h3>Await EventBridge completion event</h3></div>
-          <div class="step-body"><p>The handler does not poll. The SQS visibility timeout keeps the message invisible while the job runs. Glue publishes a job-state-change event to EventBridge on success or failure, which triggers the next step.</p>
+          <div class="step-body"><p>The handler does not poll and does not keep the SQS message open for the full job. It records the Glue/EMR run ID, acknowledges the start message, and relies on the EventBridge job-state-change event to trigger completion.</p>
           <p>On failure: <code>attempt_count</code> incremented; message reappears in SQS after timeout. At 3 attempts: task marked <code>failed</code>, message moved to DLQ, CloudWatch alarm fires.</p></div>
         </div>
       </div>
@@ -387,16 +388,16 @@
         </div>
         <div class="protocol-step">
           <div class="proto-num" style="color:var(--accent2)">4</div>
-          <div class="proto-body"><strong>Replay</strong> — reset the consumer's checkpoint to <code>semantic_field_definitions.created_at</code> for the version-1 row — the moment the wrong definition first became active. Records from that point onward were processed under the wrong definition and must be reprocessed. Re-enable the event source mapping.</div>
+          <div class="proto-body"><strong>Historical backfill</strong> — launch a bounded backfill from the immutable raw-event archive in S3 for the old definition's active window. Records from that window were processed under the wrong definition and must be recomputed without rewinding the production consumer.</div>
         </div>
         <div class="protocol-step">
           <div class="proto-num" style="color:var(--accent2)">5</div>
-          <div class="proto-body"><strong>Resume</strong> — consumer processes records from the replay point with the corrected semantic interpretation. It catches up to the current stream position and resumes normal real-time processing.</div>
+          <div class="proto-body"><strong>Resume</strong> — re-enable the consumer from the drained checkpoint with the corrected semantic interpretation. New events that arrived during the pause are processed normally while the historical backfill writes the corrected materialization.</div>
         </div>
       </div>
       <div class="step-block" style="margin-top:12px">
-        <div class="step-header"><div class="step-num" style="background:var(--accent3);color:#0f1117">!</div><h3>Why replay from definition activation time, not pause time</h3></div>
-        <div class="step-body"><p>The pause time only covers records processed since the correction was initiated. But records processed before the correction were also interpreted under the wrong definition — DAU metric aggregations may have bucketed dates incorrectly for months. Replaying from the original <code>created_at</code> ensures the entire historical window under the wrong definition is reprocessed.</p></div>
+        <div class="step-header"><div class="step-num" style="background:var(--accent3);color:#0f1117">!</div><h3>Why backfill from definition activation time, not pause time</h3></div>
+        <div class="step-body"><p>The pause time only covers records processed since the correction was initiated. But records processed before the correction were also interpreted under the wrong definition — DAU metric aggregations may have bucketed dates incorrectly for months. Backfilling from the original <code>created_at</code> covers the entire historical window without depending on Kinesis/MSK retention or replaying old records through the production consumer.</p></div>
       </div>
     </div>
   </div>
@@ -414,7 +415,7 @@
   <div class="flow-note" style="max-width:none;">
     <h3>Completion Handler — called on every task success</h3>
     <div class="flow-steps">
-      <div class="flow-step"><div class="step-num" style="background:var(--accent5)">1</div><span>In a single Aurora transaction: set <code>propagation_tasks.status = 'completed'</code>, <code>completed_at = now()</code>. Update <code>dataset_field_bindings</code> for this dataset: <code>definition_id = &lt;new_definition_id&gt;</code>, <code>is_stale = false</code>, <code>bound_at = now()</code>. This is the moment the dataset officially transitions from the old semantic contract to the new one. Increment <code>propagation_events.completed_dataset_count</code>.</span></div>
+      <div class="flow-step"><div class="step-num" style="background:var(--accent5)">1</div><span>In a single Aurora transaction: set <code>propagation_tasks.status = 'completed'</code>, <code>completed_at = now()</code>; promote the validated output by updating <code>datasets.current_materialization_uri</code>; update direct <code>dataset_field_bindings</code> for this dataset to <code>definition_id = &lt;new_definition_id&gt;</code>, <code>is_stale = false</code>, <code>bound_at = now()</code>; increment <code>propagation_events.completed_dataset_count</code>.</span></div>
       <div class="flow-step"><div class="step-num" style="background:var(--accent5)">2</div><span>If <code>completed_dataset_count = affected_dataset_count</code>: set <code>propagation_events.status = 'completed'</code>, record <code>completed_at</code>. The propagation is done.</span></div>
       <div class="flow-step"><div class="step-num" style="background:var(--accent5)">3</div><span>Query <code>propagation_tasks</code> for any task in <code>blocked</code> status whose <code>blocked_by_task_ids</code> are now all <code>completed</code>. For each: set status to <code>pending</code>, enqueue to the appropriate SQS queue (batch or streaming). This is "wave progression" — no task is ever enqueued until all its upstream dependencies within the affected subgraph have completed.</span></div>
     </div>
@@ -427,7 +428,7 @@
     <div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">⚡</div>
     <div>
       <h2>Partial Inconsistency During Propagation</h2>
-      <p>While propagation is in progress, some datasets are on the new definition and some are not. This window is unavoidable — and managed explicitly.</p>
+      <p>While propagation is in progress, some datasets are on the new definition and some are not. This window is unavoidable, so the system serves only the last promoted <code>datasets.current_materialization_uri</code> for each dataset.</p>
     </div>
   </div>
   <div class="mode-grid">

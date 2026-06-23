@@ -10,7 +10,7 @@ This document describes the AWS infrastructure that supports the semantic propag
 4. Execute recomputation across batch and streaming pipelines in topological order
 5. Isolate work per tenant and support rollback
 
-The five data model tables from Document 1 (`semantic_field_definitions`, `dataset_field_bindings`, `dataset_lineage`, `propagation_events`, `propagation_tasks`) are the source of truth throughout. Every architectural decision maps back to operations on those tables.
+The six data model tables from Document 1 (`datasets`, `semantic_field_definitions`, `dataset_field_bindings`, `dataset_lineage`, `propagation_events`, `propagation_tasks`) are the metadata source of truth throughout. Every architectural decision maps back to operations on those tables.
 
 ---
 
@@ -63,6 +63,7 @@ Glue / EMR Serverless          Streaming Control Plane
             │  ┌──────────────────────────────────────────────────┐
             ├──► Aurora PostgreSQL                                │
             │  │  propagation_tasks    (mark completed)           │
+            │  │  datasets             (promote read pointer)      │
             │  │  dataset_field_bindings (update direct stale rows)│
             │  │  propagation_events   (increment completed count)│
             │  └──────────────────────────────────────────────────┘
@@ -78,10 +79,11 @@ Glue / EMR Serverless          Streaming Control Plane
 
 ### Aurora PostgreSQL (Serverless v2)
 
-**Purpose:** Hosts all five metadata tables. Acts as the single source of truth for definitions, bindings, lineage, and propagation state.
+**Purpose:** Hosts all six metadata tables. Acts as the single source of truth for the dataset registry, definitions, bindings, lineage, and propagation state.
 
 **Why Aurora PostgreSQL and not DynamoDB or plain RDS:**
 - The bulk staleness sweep (`UPDATE dataset_field_bindings SET is_stale=true WHERE definition_id IN (...)`) needs to be atomic with the definition insert and the `superseded_by` update. PostgreSQL transactions give this for free; DynamoDB transactions are capped at 100 items.
+- The Completion Handler must atomically promote `datasets.current_materialization_uri`, update direct stale bindings, mark the task complete, and advance event progress. A single relational transaction prevents readers from seeing a new pointer while the metadata still says the dataset is stale, or vice versa.
 - `time_semantics` is stored as JSONB. PostgreSQL queries it natively (e.g., `WHERE time_semantics->>'timezone' = 'UTC'`); DynamoDB would require a separate attribute per subfield or a serialized blob.
 - `dataset_lineage` traversal is a recursive query. PostgreSQL recursive CTEs (`WITH RECURSIVE`) express this in a single query. In DynamoDB you'd implement BFS in application code with multiple round trips.
 - Serverless v2 scales ACUs (Aurora Capacity Units) to zero when idle, which matters for a platform where propagation bursts are infrequent.
@@ -163,8 +165,9 @@ The EventBridge publish happens after the transaction commits. If it fails, the 
 2. From those datasets, BFS over `dataset_lineage` to find all transitive downstream dependents. Each hop increments the depth counter.
 3. Topological sort the full affected subgraph. For each node, compute `blocked_by_task_ids` as the subset of its direct upstream task IDs that are in the affected set.
 4. Insert `propagation_events` row with `affected_dataset_count` set.
-5. Bulk-insert all `propagation_tasks` rows (one per affected dataset, with `topological_depth` and `blocked_by_task_ids`).
-6. Enqueue only the tasks with `topological_depth = 0` to SQS.
+5. Join `datasets` to copy `pipeline_type` into each task, so batch and streaming work can be routed without another lookup at queue time.
+6. Bulk-insert all `propagation_tasks` rows (one per affected dataset, with `topological_depth` and `blocked_by_task_ids`).
+7. Enqueue only the tasks with `topological_depth = 0` to SQS.
 
 **Why compute the full task set up front instead of dynamically:**
 Inserting all tasks at creation time means the full scope is visible immediately. Operators can query `propagation_tasks` to see what work is outstanding before any task runs. Dynamic task creation (spawn children on completion) would make progress opaque until late in the propagation.
@@ -217,7 +220,7 @@ Glue is the default — no cluster management, pay-per-DPU-second, native AWS ca
 2. **Pause**: disable the Lambda event source mapping (or suspend the MSK consumer group) to stop new records from being processed.
 3. **Drain**: wait until the in-flight records batch is fully processed and committed (monitored via CloudWatch metric `IteratorAgeMilliseconds` dropping to 0, or MSK consumer lag reaching 0).
 4. **Update**: push the new semantic definition config to the consumer (e.g., update a Parameter Store value that the consumer reads at startup, or update a Glue Schema Registry schema version).
-5. **Historical backfill**: launch a bounded replay/backfill job from the immutable raw-event archive in S3, not from the live stream. Kinesis/MSK retention may not cover a year of history, and replaying an old checkpoint through the production consumer can duplicate side effects.
+5. **Historical backfill**: launch a bounded backfill job from the immutable raw-event archive in S3, not from the live stream. Kinesis/MSK retention may not cover a year of history, and replaying an old checkpoint through the production consumer can duplicate side effects.
 6. **Resume live processing**: re-enable the event source mapping from the drained checkpoint with the corrected semantic interpretation. New events accumulate during the pause and are processed once the consumer resumes.
 7. Invoke the Completion Handler after the historical backfill has produced the corrected materialization and the live consumer is running on the new config.
 
@@ -252,7 +255,7 @@ The compute job (Glue, EMR, consumer) rewrites data but shouldn't own the metada
 
 Isolation is enforced at three layers:
 
-**Data layer:** Each row in all five tables carries `tenant_id`. Aurora row-level security policies (using `SET app.current_tenant_id` at connection time, applied via a Lambda middleware wrapper) prevent cross-tenant reads at the database level.
+**Data layer:** Dataset-level rows (`datasets`, `dataset_field_bindings`, `dataset_lineage`, `propagation_tasks`) carry `tenant_id` directly. Definition rows are scoped through `source_dataset_id`, and `propagation_events` are global incident records whose tenant-visible details come from the tenant-scoped tasks. Aurora row-level security policies (using `SET app.current_tenant_id` at connection time, applied via a Lambda middleware wrapper) prevent cross-tenant reads at the database level.
 
 **Compute layer:** Glue jobs and EMR runs are parameterized with `tenant_id` and write to tenant-scoped S3 prefixes (`s3://data-platform/{tenant_id}/datasets/{dataset_id}/`). IAM execution roles for Glue are scoped to `s3:GetObject` and `s3:PutObject` on the tenant's prefix only.
 
@@ -300,6 +303,7 @@ All `DefinitionCorrected` EventBridge events are archived to CloudWatch Logs and
 
 | Data Model Table | AWS Service(s) That Write It | AWS Service(s) That Read It |
 |---|---|---|
+| `datasets` | External dataset registration, Completion Handler (read pointer promotion) | DAG Traversal Lambda, Task Handlers, query layer, Status API |
 | `semantic_field_definitions` | Metadata Writer Lambda | DAG Traversal Lambda, Status API |
 | `dataset_field_bindings` | Metadata Writer Lambda (stale sweep), Completion Handler (bind update) | DAG Traversal Lambda, Status API |
 | `dataset_lineage` | External pipeline registration (not part of this flow) | DAG Traversal Lambda |

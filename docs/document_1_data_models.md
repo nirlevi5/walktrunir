@@ -2,13 +2,36 @@
 
 ## Context
 
-The system tracks two kinds of knowledge: *what fields mean* (semantic definitions, versioned) and *what datasets were built against* (bindings to a specific version). A correction does not mutate the shared base data or change the physical schema; it creates a new semantic definition version and marks every dataset that used the old version as stale. The tables below support detecting staleness, traversing the dependency graph, and tracking recomputation progress.
+The system tracks three kinds of knowledge: *what datasets exist* (dataset registry and current read pointer), *what fields mean* (semantic definitions, versioned), and *what datasets were built against* (bindings to a specific semantic version). A correction does not mutate the shared base data or change the physical schema; it creates a new semantic definition version, marks every dataset that used the old version as stale, and eventually promotes corrected materializations dataset by dataset. The tables below support detecting staleness, traversing the dependency graph, tracking recomputation progress, and serving only validated outputs.
 
-The tables assume a pre-existing `datasets` table with columns `dataset_id`, `tenant_id`, `name`, `pipeline_type` (`batch` | `streaming`), and `current_materialization_uri` (the S3 location currently exposed to readers).
+`datasets` is included as a first-class metadata table because the propagation flow reads it to decide how each dataset is recomputed and writes it to promote the newly validated output. Without this table, the design would have no explicit owner for the current materialization pointer that readers use.
 
 ---
 
-## Table 1: `semantic_field_definitions`
+## Table 1: `datasets`
+
+Dataset registry and serving pointer for each tenant-owned dataset.
+
+| Column | Type | Notes |
+|---|---|---|
+| `dataset_id` | UUID | Primary key |
+| `tenant_id` | UUID | Tenant that owns the dataset |
+| `name` | varchar | Human-readable dataset name |
+| `pipeline_type` | enum | `batch` \| `streaming`; determines recomputation handler |
+| `current_materialization_uri` | text | S3 location currently exposed to readers |
+| `consumer_ref` | text (nullable) | Streaming consumer group ID, Lambda event source mapping ARN, or equivalent control-plane reference |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | |
+
+**What it represents:** The authoritative registry of datasets the platform can serve or recompute. It also stores the pointer to the currently committed output for each dataset.
+
+**Why it exists:** Recompute jobs write corrected output to a staging/versioned S3 prefix first. Readers must not see that output until validation succeeds. `current_materialization_uri` is the explicit commit pointer: the Completion Handler advances it only after the task succeeds, and failed tasks leave it unchanged.
+
+**Design decision — metadata pointer vs. overwriting output in place:** A pointer makes promotion and rollback explicit. Overwriting a dataset's current S3 prefix in place risks exposing half-written or unvalidated data and makes rollback a storage recovery problem. With a metadata pointer, prior materializations can remain available until the new one is verified.
+
+---
+
+## Table 2: `semantic_field_definitions`
 
 Stores each version of a field's semantic definition as an immutable row.
 
@@ -35,7 +58,7 @@ Stores each version of a field's semantic definition as an immutable row.
 
 ---
 
-## Table 2: `dataset_field_bindings`
+## Table 3: `dataset_field_bindings`
 
 Records which version of a field's definition each dataset was computed against.
 
@@ -57,7 +80,7 @@ Records which version of a field's definition each dataset was computed against.
 
 ---
 
-## Table 3: `dataset_lineage`
+## Table 4: `dataset_lineage`
 
 Represents the directed acyclic graph (DAG) of dataset-to-dataset dependencies.
 
@@ -78,7 +101,7 @@ Represents the directed acyclic graph (DAG) of dataset-to-dataset dependencies.
 
 ---
 
-## Table 4: `propagation_events`
+## Table 5: `propagation_events`
 
 One row per semantic correction — the top-level record for a correction incident.
 
@@ -101,7 +124,7 @@ One row per semantic correction — the top-level record for a correction incide
 
 ---
 
-## Table 5: `propagation_tasks`
+## Table 6: `propagation_tasks`
 
 One row per dataset per propagation event — the atomic unit of recomputation work.
 
@@ -124,7 +147,7 @@ One row per dataset per propagation event — the atomic unit of recomputation w
 
 **What it represents:** The work queue entry for recomputing one dataset. The full set of tasks for a propagation event is computed up front (topological sort of the affected subgraph) and inserted together when the event is created.
 
-**Why it exists — and why separate from `propagation_events`:** The event is *what changed*; the tasks are *what work needs to happen*. Separating them lets us: (a) retry individual task failures without re-triggering the whole event, (b) observe granular progress (which specific datasets are stuck), and (c) have different handling per `pipeline_type` — a batch task just re-runs a job, a streaming task requires pause/drain/replay/resume.
+**Why it exists — and why separate from `propagation_events`:** The event is *what changed*; the tasks are *what work needs to happen*. Separating them lets us: (a) retry individual task failures without re-triggering the whole event, (b) observe granular progress (which specific datasets are stuck), and (c) have different handling per `pipeline_type` — a batch task just re-runs a job, a streaming task requires pause/drain/backfill/resume.
 
 **Direct vs. transitive tasks:** Not every affected dataset has a `dataset_field_bindings` row that points directly to the old `event_timestamp` definition. A downstream aggregate might need recomputation because one of its inputs changed, while its own binding rows remain unchanged. `recompute_reason` and `binding_definition_ids_to_update` make that distinction explicit so the Completion Handler updates semantic bindings only when the dataset actually had stale bindings to replace.
 
@@ -139,17 +162,14 @@ semantic_field_definitions  (versioned chain via superseded_by)
          │
          │  one definition version can be bound to many datasets
          ▼
-dataset_field_bindings  ──────►  datasets
+dataset_field_bindings  ──────►  datasets  ◄──────  propagation_tasks
          │
-         │  identifies which datasets are stale
-         ▼
-propagation_events  (one per correction)
+         │ identifies direct stale datasets      ▲
+         │                                      │ one event spawns one task
+         ▼                                      │ per affected dataset
+propagation_events  ───────────────────────────┘
          │
-         │  one event spawns one task per affected dataset
-         ▼
-propagation_tasks  ──────►  datasets
-         │
-         │  traversal order determined by
+         │ traversal order determined by
          ▼
 dataset_lineage  (the DAG: upstream_id → downstream_id)
 ```
@@ -160,5 +180,6 @@ When `event_timestamp`'s definition is corrected:
 3. All matching rows in `dataset_field_bindings` have `is_stale` set to `true`.
 4. A `propagation_events` row is created.
 5. The lineage DAG is traversed to find all affected datasets (direct + transitive).
-6. `propagation_tasks` rows are inserted with computed `topological_depth` and `blocked_by_task_ids`.
-7. Tasks execute in topological order; each completion increments `propagation_events.completed_dataset_count`. For directly bound datasets, the matching `dataset_field_bindings` rows are updated to the new definition with `is_stale = false`; downstream-only tasks are marked complete without inventing a binding they did not have.
+6. The traversal joins `datasets` to copy each affected dataset's `pipeline_type` into its task.
+7. `propagation_tasks` rows are inserted with computed `topological_depth` and `blocked_by_task_ids`.
+8. Tasks execute in topological order; each successful completion promotes `datasets.current_materialization_uri` to the validated output and increments `propagation_events.completed_dataset_count`. For directly bound datasets, the matching `dataset_field_bindings` rows are updated to the new definition with `is_stale = false`; downstream-only tasks are marked complete without inventing a binding they did not have.

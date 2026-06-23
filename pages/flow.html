@@ -288,7 +288,7 @@
       <ul>
         <li>Metadata Writer wraps all three Aurora writes in one transaction — the state is consistent before EventBridge fires.</li>
         <li>DAG Traversal inserts the full task set up front so scope is visible immediately; only depth-0 tasks are enqueued first.</li>
-        <li>Each successful Completion Handler call promotes <code>datasets.current_materialization_uri</code>, increments <code>completed_dataset_count</code>, and releases the next topological wave to SQS — no Step Functions needed.</li>
+        <li>Each successful Completion Handler call atomically promotes <code>datasets.current_materialization_uri</code>, updates direct stale bindings, increments <code>completed_dataset_count</code>, and releases the next topological wave to SQS — no Step Functions needed.</li>
         <li>Batch path: Glue / EMR Serverless recomputes data, publishes completion via EventBridge job state change event.</li>
         <li>Streaming path: consumer is paused, drained, config updated in Parameter Store, historical data is backfilled from the raw S3 archive, then live processing resumes from the drained checkpoint.</li>
         <li>Rollback is a reverse <code>DefinitionCorrected</code> event — same pipeline, <code>new_definition_id</code> points back to the prior version.</li>

@@ -120,6 +120,7 @@
     .c3 { background: var(--accent3); }
     .c4 { background: var(--accent4); }
     .c5 { background: var(--accent5); }
+    .c6 { background: #ec4899; }
 
     @media (max-width: 700px) {
       .erd-container { margin-bottom: 36px; }
@@ -137,7 +138,7 @@
 <div class="page-content">
 
 <h1>Document 1 — Data Models</h1>
-<p class="subtitle">Semantic propagation system · 5 tables · append-only versioning</p>
+<p class="subtitle">Semantic propagation system · 6 tables · append-only definitions · explicit dataset read pointers</p>
 
 <!-- ──────────────── ERD ──────────────── -->
 <div class="erd-container">
@@ -184,15 +185,28 @@
       <text x="690" y="144" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  tenant_id           UUID</text>
 
       <!-- T4: propagation_events -->
-      <rect x="365" y="240" width="270" height="30" rx="6" fill="#10b981" opacity="0.9"/>
-      <text x="377" y="260" font-size="11" font-weight="700" font-family="Consolas,monospace" fill="white">propagation_events</text>
-      <rect x="365" y="270" width="270" height="128" fill="#1a1d27" stroke="#10b981" stroke-width="1" opacity="0.5"/>
-      <text x="375" y="284" font-size="9.5" font-family="Consolas,monospace" fill="#fbbf24">● event_id               UUID PK</text>
-      <text x="375" y="304" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ old_definition_id       UUID FK</text>
-      <text x="375" y="324" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ new_definition_id       UUID FK</text>
-      <text x="375" y="344" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  status                   enum</text>
-      <text x="375" y="364" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  affected/completed_count int</text>
-      <text x="375" y="384" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ rollback_event_id       UUID FK?</text>
+      <rect x="50" y="240" width="270" height="30" rx="6" fill="#10b981" opacity="0.9"/>
+      <text x="62" y="260" font-size="11" font-weight="700" font-family="Consolas,monospace" fill="white">propagation_events</text>
+      <rect x="50" y="270" width="270" height="128" fill="#1a1d27" stroke="#10b981" stroke-width="1" opacity="0.5"/>
+      <text x="60" y="284" font-size="9.5" font-family="Consolas,monospace" fill="#fbbf24">● event_id               UUID PK</text>
+      <text x="60" y="304" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ old_definition_id       UUID FK</text>
+      <text x="60" y="324" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ new_definition_id       UUID FK</text>
+      <text x="60" y="344" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  status                   enum</text>
+      <text x="60" y="364" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  affected/completed_count int</text>
+      <text x="60" y="384" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ rollback_event_id       UUID FK?</text>
+
+      <!-- T5: propagation_tasks -->
+      <rect x="410" y="240" width="270" height="30" rx="6" fill="#f43f5e" opacity="0.9"/>
+      <text x="422" y="260" font-size="11" font-weight="700" font-family="Consolas,monospace" fill="white">propagation_tasks</text>
+      <rect x="410" y="270" width="270" height="168" fill="#1a1d27" stroke="#f43f5e" stroke-width="1" opacity="0.5"/>
+      <text x="420" y="284" font-size="9.5" font-family="Consolas,monospace" fill="#fbbf24">● task_id              UUID PK</text>
+      <text x="420" y="304" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ event_id             UUID FK</text>
+      <text x="420" y="324" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ dataset_id           UUID FK</text>
+      <text x="420" y="344" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  pipeline_type          enum</text>
+      <text x="420" y="364" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  topological_depth      int</text>
+      <text x="420" y="384" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  status                 enum</text>
+      <text x="420" y="404" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  blocked_by_task_ids    UUID[]</text>
+      <text x="420" y="424" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  attempt_count          int</text>
 
       <!-- T3: dataset_lineage -->
       <rect x="50" y="470" width="270" height="30" rx="6" fill="#f59e0b" opacity="0.9"/>
@@ -204,18 +218,15 @@
       <text x="60" y="574" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  dependency_type          enum</text>
       <text x="60" y="594" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  tenant_id                UUID</text>
 
-      <!-- T5: propagation_tasks -->
-      <rect x="680" y="440" width="270" height="30" rx="6" fill="#f43f5e" opacity="0.9"/>
-      <text x="692" y="460" font-size="11" font-weight="700" font-family="Consolas,monospace" fill="white">propagation_tasks</text>
-      <rect x="680" y="470" width="270" height="168" fill="#1a1d27" stroke="#f43f5e" stroke-width="1" opacity="0.5"/>
-      <text x="690" y="484" font-size="9.5" font-family="Consolas,monospace" fill="#fbbf24">● task_id              UUID PK</text>
-      <text x="690" y="504" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ event_id             UUID FK</text>
-      <text x="690" y="524" font-size="9.5" font-family="Consolas,monospace" fill="#60a5fa">◆ dataset_id           UUID FK</text>
-      <text x="690" y="544" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  pipeline_type          enum</text>
-      <text x="690" y="564" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  topological_depth      int</text>
-      <text x="690" y="584" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  status                 enum</text>
-      <text x="690" y="604" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  blocked_by_task_ids    UUID[]</text>
-      <text x="690" y="624" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  attempt_count          int</text>
+      <!-- T0: datasets -->
+      <rect x="680" y="470" width="270" height="30" rx="6" fill="#ec4899" opacity="0.9"/>
+      <text x="692" y="490" font-size="11" font-weight="700" font-family="Consolas,monospace" fill="white">datasets</text>
+      <rect x="680" y="500" width="270" height="108" fill="#1a1d27" stroke="#ec4899" stroke-width="1" opacity="0.5"/>
+      <text x="690" y="514" font-size="9.5" font-family="Consolas,monospace" fill="#fbbf24">● dataset_id          UUID PK</text>
+      <text x="690" y="534" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  tenant_id           UUID</text>
+      <text x="690" y="554" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  name                varchar</text>
+      <text x="690" y="574" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  pipeline_type       enum</text>
+      <text x="690" y="594" font-size="9.5" font-family="Consolas,monospace" fill="#94a3b8">  current_materialization_uri</text>
 
       <!-- ARROWS -->
       <!-- 1: T2 → T1  definition_id FK -->
@@ -223,6 +234,24 @@
             stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3"
             marker-end="url(#arr-blue)"/>
       <text x="500" y="97" font-size="8.5" fill="#60a5fa" text-anchor="middle" font-family="sans-serif">definition_id FK</text>
+
+      <!-- dataset FKs -->
+      <path d="M 815,158 L 815,468"
+            stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3"
+            fill="none" marker-end="url(#arr-blue)"/>
+      <text x="828" y="316" font-size="8.5" fill="#60a5fa" text-anchor="start" font-family="sans-serif"
+            transform="rotate(90 828 316)">binding dataset_id FK</text>
+
+      <path d="M 680,324 L 735,324 L 735,468"
+            stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3" fill="none"
+            marker-end="url(#arr-blue)"/>
+      <text x="747" y="396" font-size="8.5" fill="#60a5fa" text-anchor="start" font-family="sans-serif"
+            transform="rotate(90 747 396)">task dataset_id FK</text>
+
+      <line x1="322" y1="545" x2="678" y2="545"
+            stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3" fill="none"
+            marker-end="url(#arr-blue)"/>
+      <text x="500" y="538" font-size="8.5" fill="#60a5fa" text-anchor="middle" font-family="sans-serif">lineage dataset FKs</text>
 
       <!-- 2: T1 self-ref superseded_by -->
       <path d="M 50,144 C 18,144 18,64 50,64"
@@ -232,28 +261,27 @@
             transform="rotate(-90 10 107)">superseded_by</text>
 
       <!-- 3: T4 → T1  old/new_definition_id FK -->
-      <path d="M 365,312 L 185,312 L 185,158"
+      <path d="M 185,270 L 185,158"
             stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3" fill="none"
             marker-end="url(#arr-blue)"/>
-      <text x="272" y="305" font-size="8.5" fill="#60a5fa" text-anchor="middle" font-family="sans-serif">old/new_definition_id FK</text>
+      <text x="198" y="218" font-size="8.5" fill="#60a5fa" text-anchor="start" font-family="sans-serif">old/new_definition_id FK</text>
 
       <!-- 4: T5 → T4  event_id FK -->
-      <path d="M 845,440 L 845,284 L 637,284"
+      <line x1="410" y1="304" x2="322" y2="304"
             stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3" fill="none"
             marker-end="url(#arr-blue)"/>
-      <text x="748" y="277" font-size="8.5" fill="#60a5fa" text-anchor="middle" font-family="sans-serif">event_id FK</text>
+      <text x="366" y="297" font-size="8.5" fill="#60a5fa" text-anchor="middle" font-family="sans-serif">event_id FK</text>
 
       <!-- 5: T4 self-ref rollback_event_id -->
-      <path d="M 635,384 C 672,384 672,284 635,284"
+      <path d="M 320,384 C 358,384 358,284 320,284"
             stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,3" fill="none"
             marker-end="url(#arr-purple)"/>
-      <text x="678" y="337" font-size="8.5" fill="#a78bfa" text-anchor="start" font-family="sans-serif">rollback_event_id</text>
+      <text x="363" y="337" font-size="8.5" fill="#a78bfa" text-anchor="start" font-family="sans-serif">rollback_event_id</text>
 
       <!-- 6: T3 → T5  drives topological order -->
-      <line x1="322" y1="545" x2="678" y2="545"
-            stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"
-            marker-end="url(#arr-amber)"/>
-      <text x="500" y="538" font-size="8.5" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">drives topological order</text>
+      <path d="M 320,545 L 545,545 L 545,440"
+            stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" fill="none"/>
+      <text x="432" y="538" font-size="8.5" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">drives topological order</text>
     </svg>
   </div>
 </div>
@@ -268,7 +296,29 @@
   <!-- Table 1 -->
   <div class="card">
     <div class="card-header">
-      <div class="card-number c1" style="color:white">1</div>
+      <div class="card-number c6" style="color:white">1</div>
+      <div class="card-title">datasets</div>
+    </div>
+    <div class="card-purpose">Dataset registry and current serving pointer. The Completion Handler promotes <code>current_materialization_uri</code> only after corrected output is validated.</div>
+    <table class="schema">
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="col-name"><span class="badge pk">PK</span>dataset_id</td><td class="col-type">UUID</td><td class="col-notes">Primary key</td></tr>
+        <tr><td class="col-name">tenant_id</td><td class="col-type">UUID</td><td class="col-notes">Tenant that owns the dataset</td></tr>
+        <tr><td class="col-name">name</td><td class="col-type">varchar</td><td class="col-notes">Human-readable dataset name</td></tr>
+        <tr><td class="col-name">pipeline_type</td><td class="col-type">enum</td><td class="col-notes"><code>batch</code> | <code>streaming</code>; chooses recomputation handler</td></tr>
+        <tr><td class="col-name">current_materialization_uri</td><td class="col-type">text</td><td class="col-notes">S3 location currently exposed to readers</td></tr>
+        <tr><td class="col-name">consumer_ref</td><td class="col-type">text?</td><td class="col-notes">Streaming consumer group / event source mapping reference</td></tr>
+        <tr><td class="col-name">created_at</td><td class="col-type">timestamptz</td><td class="col-notes"></td></tr>
+        <tr><td class="col-name">updated_at</td><td class="col-type">timestamptz</td><td class="col-notes"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Table 2 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-number c1" style="color:white">2</div>
       <div class="card-title">semantic_field_definitions</div>
     </div>
     <div class="card-purpose">Append-only log of field semantic versions. Each correction adds a new row; old rows are never modified. Linked via <code>superseded_by</code> chain.</div>
@@ -291,10 +341,10 @@
     </table>
   </div>
 
-  <!-- Table 2 -->
+  <!-- Table 3 -->
   <div class="card">
     <div class="card-header">
-      <div class="card-number c2" style="color:#0f1117">2</div>
+      <div class="card-number c2" style="color:#0f1117">3</div>
       <div class="card-title">dataset_field_bindings</div>
     </div>
     <div class="card-purpose">Records which definition version each dataset was computed against. <code>is_stale=true</code> marks datasets needing recomputation after a correction.</div>
@@ -312,10 +362,10 @@
     </table>
   </div>
 
-  <!-- Table 3 -->
+  <!-- Table 4 -->
   <div class="card">
     <div class="card-header">
-      <div class="card-number c3" style="color:#0f1117">3</div>
+      <div class="card-number c3" style="color:#0f1117">4</div>
       <div class="card-title">dataset_lineage</div>
     </div>
     <div class="card-purpose">One row per upstream → downstream edge in the dependency DAG. BFS/DFS traversal finds the full impact set; topological sort determines safe recomputation order.</div>
@@ -332,10 +382,10 @@
     </table>
   </div>
 
-  <!-- Table 4 -->
+  <!-- Table 5 -->
   <div class="card">
     <div class="card-header">
-      <div class="card-number c4" style="color:white">4</div>
+      <div class="card-number c4" style="color:white">5</div>
       <div class="card-title">propagation_events</div>
     </div>
     <div class="card-purpose">Top-level incident record per semantic correction. Anchors old → new definition, overall progress, and rollback chain. One row per correction.</div>
@@ -356,10 +406,10 @@
     </table>
   </div>
 
-  <!-- Table 5 -->
+  <!-- Table 6 -->
   <div class="card">
     <div class="card-header">
-      <div class="card-number c5" style="color:white">5</div>
+      <div class="card-number c5" style="color:white">6</div>
       <div class="card-title">propagation_tasks</div>
     </div>
     <div class="card-purpose">One row per dataset per propagation event — the atomic work unit. Supports per-task retry, topological ordering, and different handling for batch vs streaming pipelines.</div>
@@ -378,6 +428,8 @@
         <tr><td class="col-name">completed_at</td><td class="col-type">timestamptz?</td><td class="col-notes">Nullable</td></tr>
         <tr><td class="col-name">attempt_count</td><td class="col-type">integer</td><td class="col-notes">Retry tracking</td></tr>
         <tr><td class="col-name">error_message</td><td class="col-type">text?</td><td class="col-notes">Populated on failure</td></tr>
+        <tr><td class="col-name">recompute_reason</td><td class="col-type">enum</td><td class="col-notes"><code>direct_semantic_binding</code> | <code>transitive_downstream</code></td></tr>
+        <tr><td class="col-name">binding_definition_ids_to_update</td><td class="col-type">UUID[]</td><td class="col-notes">Old definitions to replace for directly bound datasets</td></tr>
       </tbody>
     </table>
   </div>
@@ -386,15 +438,16 @@
 
 <!-- ──────────────── EVENT FLOW ──────────────── -->
 <div class="flow-note">
-  <h3>Correction lifecycle — how the 5 tables connect</h3>
+  <h3>Correction lifecycle — how the 6 tables connect</h3>
   <div class="flow-steps">
     <div class="flow-step"><div class="step-num">1</div><span>New row inserted into <code>semantic_field_definitions</code> (the corrected definition).</span></div>
     <div class="flow-step"><div class="step-num">2</div><span>Old row's <code>superseded_by</code> set to the new <code>definition_id</code>.</span></div>
     <div class="flow-step"><div class="step-num">3</div><span>All matching rows in <code>dataset_field_bindings</code> have <code>is_stale = true</code> written in bulk.</span></div>
     <div class="flow-step"><div class="step-num">4</div><span>A <code>propagation_events</code> row is created anchoring old → new definition.</span></div>
     <div class="flow-step"><div class="step-num">5</div><span><code>dataset_lineage</code> DAG is traversed (BFS from stale datasets) to find full transitive impact set.</span></div>
-    <div class="flow-step"><div class="step-num">6</div><span>One <code>propagation_tasks</code> row per affected dataset is bulk-inserted with computed <code>topological_depth</code> and <code>blocked_by_task_ids</code>.</span></div>
-    <div class="flow-step"><div class="step-num">7</div><span>Tasks execute in topological order. Each completion updates <code>dataset_field_bindings</code> (<code>is_stale = false</code>, new <code>definition_id</code>) and increments <code>propagation_events.completed_dataset_count</code>.</span></div>
+    <div class="flow-step"><div class="step-num">6</div><span><code>datasets</code> is joined to copy each affected dataset's <code>pipeline_type</code> into the task plan.</span></div>
+    <div class="flow-step"><div class="step-num">7</div><span>One <code>propagation_tasks</code> row per affected dataset is bulk-inserted with computed <code>topological_depth</code> and <code>blocked_by_task_ids</code>.</span></div>
+    <div class="flow-step"><div class="step-num">8</div><span>Tasks execute in topological order. Each completion promotes <code>datasets.current_materialization_uri</code>; direct semantic bindings are updated to <code>is_stale = false</code> and the new <code>definition_id</code>.</span></div>
   </div>
 </div>
 

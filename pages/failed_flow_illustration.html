@@ -173,7 +173,7 @@
   <main class="page-content">
     <div class="wrap">
       <h1>Failed Semantic Update - Table Flow</h1>
-      <p class="subtitle">Only the suggested tables and their failure states</p>
+      <p class="subtitle">Only the six metadata tables and their failure states</p>
 
       <p class="intro">
         This mirrors the success flow and shows what happens in the tables when a semantic update fails at each phase.
@@ -333,6 +333,7 @@
           <ul>
             <li>If the initial transaction fails, no new <code>semantic_field_definitions</code> row is committed.</li>
             <li>No <code>dataset_field_bindings</code> rows are marked stale.</li>
+            <li>The <code>datasets</code> serving pointer is untouched.</li>
             <li>No <code>propagation_events</code> or <code>propagation_tasks</code> rows should exist for that failed attempt.</li>
           </ul>
         </article>

@@ -2,7 +2,7 @@
 
 ## Context
 
-This document walks through the full lifecycle of correcting the `event_timestamp` semantic definition — from the moment an engineer submits the correction to the moment all affected datasets are recomputed and tenants are reading consistent data. Every step references the data model tables from Document 1 and the AWS services from Document 2.
+This document walks through the full lifecycle of correcting the `event_timestamp` semantic definition — from the moment an engineer submits the correction to the moment all affected datasets are recomputed and tenants are reading consistent data. Every step references the data model tables from Document 1 and the AWS services from Document 2, including the `datasets` table that stores each dataset's recomputation type and currently served materialization pointer.
 
 The correction: `event_timestamp` was documented as `free_text_string`. It is actually `iso8601_date` (YYYY-MM-DD, UTC, no time component). The shared base data and physical schema do not change. Materialized derived datasets may still be rewritten, because their existing outputs were computed under the wrong semantic meaning.
 
@@ -183,7 +183,7 @@ When a task completes (success signal from Glue EventBridge event or from the St
 
 1. **Within a single Aurora transaction:**
    - Sets `propagation_tasks.status = 'completed'`, `completed_at = now()` for the finished task.
-   - Promotes the staging/versioned materialization for this dataset to the committed read pointer after validation.
+   - Promotes the staging/versioned materialization for this dataset by updating `datasets.current_materialization_uri` after validation.
    - For directly bound datasets only: updates matching `dataset_field_bindings` rows from the old definition to the new definition, sets `is_stale = false`, and records `bound_at = now()`. This is the moment the dataset officially transitions from the old semantic contract to the new one.
    - Increments `propagation_events.completed_dataset_count`.
    - If `completed_dataset_count = affected_dataset_count`: sets `propagation_events.status = 'completed'`, records `completed_at`.
@@ -199,7 +199,7 @@ This "wave progression" is the core of topological execution. No task is ever en
 
 ## Partial Inconsistency — What Tenants See During Propagation
 
-While propagation is in progress, some datasets have completed recomputation (`is_stale = false`, bound to the new definition) and some have not (`is_stale = true`). The system prevents half-written outputs from leaking by writing all recomputation results to staging/versioned locations and promoting a dataset's read pointer only after its task succeeds.
+While propagation is in progress, some datasets have completed recomputation (`is_stale = false`, bound to the new definition) and some have not (`is_stale = true`). The system prevents half-written outputs from leaking by writing all recomputation results to staging/versioned locations and promoting `datasets.current_materialization_uri` only after the task succeeds.
 
 **The system manages it in three ways:**
 
@@ -245,7 +245,7 @@ Rolling back a single tenant without affecting others is supported. The Metadata
 
 **Correctness vs cost — eager recomputation**
 
-Every affected dataset is recomputed immediately, including datasets that tenants may not query for weeks. This is expensive: potentially hundreds of Glue jobs and streaming replays triggered by a single correction. The alternative — lazy recomputation, where a stale dataset is only recomputed when a tenant actually queries it — would save compute cost. But lazy recomputation turns the propagation into an unbounded, invisible process with no clear completion state. It makes rollback harder (you don't know what's been updated and what hasn't), and it means billing and compliance datasets can silently serve stale data. For a platform where `event_timestamp` feeds billing deduplication and identity joins, the risk of silent staleness outweighs the compute cost.
+Every affected dataset is recomputed immediately, including datasets that tenants may not query for weeks. This is expensive: potentially hundreds of Glue jobs and streaming backfills triggered by a single correction. The alternative — lazy recomputation, where a stale dataset is only recomputed when a tenant actually queries it — would save compute cost. But lazy recomputation turns the propagation into an unbounded, invisible process with no clear completion state. It makes rollback harder (you don't know what's been updated and what hasn't), and it means billing and compliance datasets can silently serve stale data. For a platform where `event_timestamp` feeds billing deduplication and identity joins, the risk of silent staleness outweighs the compute cost.
 
 **Versioned definitions vs in-place updates**
 

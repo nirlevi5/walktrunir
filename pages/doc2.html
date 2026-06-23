@@ -169,7 +169,7 @@
     <!-- Streaming Control Plane -->
     <rect x="258" y="558" width="174" height="40" rx="6" fill="#1a1d27" stroke="#10b981" stroke-width="1.5"/>
     <text x="345" y="574" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif" fill="#10b981" text-anchor="middle">Streaming Control Plane</text>
-    <text x="345" y="589" font-size="8" font-family="sans-serif" fill="#94a3b8" text-anchor="middle">pause → drain → replay → resume</text>
+    <text x="345" y="589" font-size="8" font-family="sans-serif" fill="#94a3b8" text-anchor="middle">pause → drain → backfill → resume</text>
 
     <!-- join to Completion Handler -->
     <line x1="96"  y1="598" x2="96"  y2="636" stroke="#94a3b8" stroke-width="1.5"/>
@@ -188,8 +188,9 @@
     <rect x="452" y="650" width="358" height="78" rx="8" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5"/>
     <text x="462" y="667" font-size="9.5" font-weight="700" font-family="Consolas,monospace" fill="#6366f1">Aurora PostgreSQL</text>
     <text x="462" y="683" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  propagation_tasks      (mark completed)</text>
-    <text x="462" y="699" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  dataset_field_bindings (update to new def_id)</text>
-    <text x="462" y="715" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  propagation_events     (incr. completed_count)</text>
+    <text x="462" y="699" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  datasets               (promote read pointer)</text>
+    <text x="462" y="715" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  dataset_field_bindings (update direct stale rows)</text>
+    <text x="462" y="724" font-size="8" font-family="Consolas,monospace" fill="#94a3b8">  propagation_events     (incr. completed_count)</text>
 
     <!-- Completion → next wave -->
     <line x1="220" y1="694" x2="220" y2="730" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
@@ -217,9 +218,9 @@
         <div class="comp-name">Aurora PostgreSQL (Serverless v2)</div>
       </div>
       <div class="comp-body">
-        <p>Single source of truth for all five metadata tables. One writer instance + one read replica; DAG traversal and status-check reads go to the replica. Deployed in a private VPC subnet; Lambdas connect via VPC config. Credentials in Secrets Manager with automatic rotation.</p>
+        <p>Single source of truth for all six metadata tables: dataset registry, definitions, bindings, lineage, propagation events, and propagation tasks. One writer instance + one read replica; DAG traversal and status-check reads go to the replica. Deployed in a private VPC subnet; Lambdas connect via VPC config. Credentials in Secrets Manager with automatic rotation.</p>
         <div class="why-box">
-          <strong>Why PostgreSQL, not DynamoDB:</strong> the bulk staleness sweep must be atomic with the definition insert — PostgreSQL gives this in one transaction; DynamoDB transactions cap at 100 items. <code>time_semantics</code> is JSONB, natively queryable. Lineage traversal is a recursive CTE; DynamoDB would require BFS in application code with N round-trips. Serverless v2 scales ACUs to zero when propagation is idle.
+          <strong>Why PostgreSQL, not DynamoDB:</strong> the bulk staleness sweep must be atomic with the definition insert, and completion must atomically promote <code>datasets.current_materialization_uri</code> with task and binding updates. PostgreSQL gives this in one transaction; DynamoDB transactions cap at 100 items. <code>time_semantics</code> is JSONB, natively queryable. Lineage traversal is a recursive CTE; DynamoDB would require BFS in application code with N round-trips. Serverless v2 scales ACUs to zero when propagation is idle.
         </div>
       </div>
     </div>
@@ -256,7 +257,7 @@
         <div class="comp-name">Lambda: DAG Traversal</div>
       </div>
       <div class="comp-body">
-        <p>Responds to <code>DefinitionCorrected</code>. Finds all affected datasets via BFS over <code>dataset_lineage</code> using a PostgreSQL recursive CTE. Computes <code>topological_depth</code> and <code>blocked_by_task_ids</code> for each node. Bulk-inserts all <code>propagation_tasks</code> rows and enqueues only depth-0 tasks to SQS.</p>
+        <p>Responds to <code>DefinitionCorrected</code>. Finds all affected datasets via BFS over <code>dataset_lineage</code> using a PostgreSQL recursive CTE. Computes <code>topological_depth</code> and <code>blocked_by_task_ids</code> for each node, joins <code>datasets</code> for <code>pipeline_type</code>, bulk-inserts all <code>propagation_tasks</code> rows, and enqueues only depth-0 tasks to SQS.</p>
         <p>For graphs over 10k nodes, BFS is paged in application code with an ElastiCache (Redis) frontier set to avoid reloading visited nodes per iteration.</p>
         <div class="why-box">
           <strong>Why all tasks up front:</strong> the full scope is visible before any work starts. Operators can query <code>propagation_tasks</code> immediately. Dynamic task creation makes scope invisible until propagation is halfway done.
@@ -306,8 +307,8 @@
           <li><strong style="color:var(--text)">Pause</strong> — disable Lambda event source mapping or suspend MSK consumer group</li>
           <li><strong style="color:var(--text)">Drain</strong> — wait for <code>IteratorAgeMilliseconds</code> → 0 (Kinesis) or MSK consumer lag → 0</li>
           <li><strong style="color:var(--text)">Update</strong> — push new definition config to Parameter Store or Glue Schema Registry</li>
-          <li><strong style="color:var(--text)">Replay</strong> — reset checkpoint to <code>semantic_field_definitions.created_at</code> of the old version; re-enable event source mapping</li>
-          <li><strong style="color:var(--text)">Resume</strong> — consumer reprocesses from replay point under correct semantics</li>
+          <li><strong style="color:var(--text)">Backfill</strong> — launch a bounded backfill from the immutable raw-event archive for the old definition's active window</li>
+          <li><strong style="color:var(--text)">Resume</strong> — re-enable live processing from the drained checkpoint under correct semantics</li>
         </ul>
         <p style="margin-top:8px;">Interim state stored in a separate DynamoDB table — lightweight, ephemeral control-plane state that doesn't need Aurora's relational power.</p>
       </div>
@@ -319,7 +320,7 @@
         <div class="comp-name">Lambda: Completion Handler</div>
       </div>
       <div class="comp-body">
-        <p>Called by both handlers on task success. In a single Aurora transaction: marks task <code>completed</code>, updates <code>dataset_field_bindings</code> to the new definition (<code>is_stale=false</code>), increments <code>propagation_events.completed_dataset_count</code>, and closes the event if all tasks are done.</p>
+        <p>Called by both handlers on task success. In a single Aurora transaction: marks task <code>completed</code>, promotes <code>datasets.current_materialization_uri</code> to the validated output, updates direct <code>dataset_field_bindings</code> to the new definition (<code>is_stale=false</code>), increments <code>propagation_events.completed_dataset_count</code>, and closes the event if all tasks are done.</p>
         <p>Then queries for tasks whose <code>blocked_by_task_ids</code> are now all <code>completed</code> — enqueues those to the appropriate SQS queue. Wave progression is driven entirely by this DB check; no central scheduler.</p>
         <div class="why-box">
           <strong>Why update bindings here, not in the compute job:</strong> the compute job rewrites data but shouldn't own the metadata contract. A single writer keeps the <code>is_stale</code> transition atomic and consistent across all tenants.
@@ -340,6 +341,7 @@
       <thead><tr><th>Table</th><th>Written by</th><th>Read by</th></tr></thead>
       <tbody>
         <tr><td>semantic_field_definitions</td><td>Metadata Writer Lambda</td><td>DAG Traversal Lambda, Status API</td></tr>
+        <tr><td>datasets</td><td>External dataset registration, Completion Handler (read pointer promotion)</td><td>DAG Traversal Lambda, Task Handlers, query layer, Status API</td></tr>
         <tr><td>dataset_field_bindings</td><td>Metadata Writer (stale sweep), Completion Handler (bind update)</td><td>DAG Traversal Lambda, Status API</td></tr>
         <tr><td>dataset_lineage</td><td>External pipeline registration (not part of this flow)</td><td>DAG Traversal Lambda</td></tr>
         <tr><td>propagation_events</td><td>DAG Traversal Lambda, Completion Handler</td><td>Status API, CloudWatch dashboards</td></tr>
@@ -358,7 +360,7 @@
     <div class="iso-card">
       <h4><span class="layer-pill" style="background:rgba(99,102,241,0.15);color:#6366f1">Data layer</span></h4>
       <ul>
-        <li>Every row in all five tables carries <code>tenant_id</code></li>
+        <li>Dataset-level rows carry <code>tenant_id</code> directly; definitions are scoped through <code>source_dataset_id</code>; global propagation events expose tenant-visible detail through tenant-scoped tasks</li>
         <li>Aurora row-level security policies enforce cross-tenant read prevention (<code>SET app.current_tenant_id</code> at connection time via Lambda middleware)</li>
       </ul>
     </div>
@@ -441,7 +443,7 @@
         <tr><td>Event routing</td><td>EventBridge custom bus</td><td>SNS, direct Lambda invoke</td><td>Decoupling, built-in event replay, easy consumer fan-out without touching the publisher</td></tr>
         <tr><td>Task orchestration</td><td>SQS + Lambda</td><td>Step Functions</td><td>Dynamic graph cannot be expressed in a static state machine; lower cost at scale; Completion Handler implements conditional fan-out via DB check</td></tr>
         <tr><td>Batch recomputation</td><td>Glue / EMR Serverless</td><td>Self-managed Spark on EC2</td><td>No cluster management, pay-per-use, EventBridge completion events; identical handler code regardless of engine</td></tr>
-        <tr><td>Streaming control</td><td>Event source mapping pause + replay</td><td>Blue/green consumer swap</td><td>Simpler; avoids running two consumer versions simultaneously; replay covers the full historical window under the wrong definition</td></tr>
+        <tr><td>Streaming control</td><td>Pause/drain live consumer + S3 historical backfill</td><td>Rewind production stream checkpoint</td><td>Avoids relying on stream retention and avoids duplicating production side effects; backfill covers the full historical window under the wrong definition</td></tr>
         <tr><td>Tenant isolation</td><td>Shared queue + per-tenant concurrency limits</td><td>Per-tenant SQS queues</td><td>Lower infra overhead initially; per-tenant queues are a supported upgrade path</td></tr>
         <tr><td>Task set creation</td><td>Up front at event creation</td><td>Dynamic on task completion</td><td>Full scope visible immediately; operators can audit before execution begins; simplifies rollback</td></tr>
       </tbody>
