@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Failed Semantic Update - Table Flow</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .intro {
+      max-width: 880px;
+      margin: -26px auto 34px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.65;
+      text-align: center;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .canvas {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008)),
+        var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px;
+      overflow-x: auto;
+      margin-bottom: 32px;
+    }
+
+    svg {
+      display: block;
+      min-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+      fill: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .node-title {
+      font-size: 13px;
+      font-weight: 800;
+      fill: var(--text);
+    }
+
+    .node-subtitle {
+      font-size: 11px;
+      fill: var(--muted);
+    }
+
+    .mono {
+      font-family: Consolas, "Fira Code", monospace;
+    }
+
+    .op {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 860px) {
+      .cards { grid-template-columns: 1fr; }
+      .page-content { padding: 28px 16px; }
+    }
+
+    .state-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .state-card h2 {
+      font-size: 0.84rem;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .state-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .state-card li {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.55;
+      display: flex;
+      gap: 8px;
+    }
+
+    .state-card li::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent5);
+      margin-top: 8px;
+      flex-shrink: 0;
+    }
+
+    .sequence {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .sequence h2 {
+      font-size: 0.84rem;
+      margin-bottom: 14px;
+    }
+
+    .sequence ol {
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page-content">
+    <div class="wrap">
+      <h1>Failed Semantic Update - Table Flow</h1>
+      <p class="subtitle">Only the suggested tables and their failure states</p>
+
+      <p class="intro">
+        This mirrors the success flow and shows what happens in the tables when a semantic update fails at each phase.
+        It intentionally excludes AWS services, queues, jobs, and external operational systems.
+      </p>
+
+      <div class="legend" aria-label="Legend">
+        <div class="legend-item"><span class="swatch" style="background:#6366f1"></span>Definition phase</div>
+        <div class="legend-item"><span class="swatch" style="background:#22d3ee"></span>Impact discovery phase</div>
+        <div class="legend-item"><span class="swatch" style="background:#f59e0b"></span>Planning phase</div>
+        <div class="legend-item"><span class="swatch" style="background:#10b981"></span>Completion phase</div>
+        <div class="legend-item"><span class="swatch" style="background:#f43f5e"></span>Failure table state</div>
+      </div>
+
+      <section class="canvas" aria-label="Failed table update flow diagram">
+        <svg viewBox="0 0 1120 980" role="img" aria-labelledby="diagram-title diagram-desc">
+          <title id="diagram-title">Failed semantic update table flow</title>
+          <desc id="diagram-desc">
+            A table-only flow showing failure states for semantic_field_definitions, dataset_field_bindings,
+            dataset_lineage, propagation_events, propagation_tasks, and datasets during a new semantic update.
+          </desc>
+
+          <defs>
+            <marker id="arrow-purple" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#6366f1" />
+            </marker>
+            <marker id="arrow-cyan" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#22d3ee" />
+            </marker>
+            <marker id="arrow-amber" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#f59e0b" />
+            </marker>
+            <marker id="arrow-green" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#10b981" />
+            </marker>
+            <marker id="arrow-red" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#f43f5e" />
+            </marker>
+            <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="130%">
+              <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.22" />
+            </filter>
+          </defs>
+
+          <rect x="20" y="22" width="1080" height="150" rx="10" fill="rgba(99,102,241,0.06)" stroke="#303452" stroke-dasharray="5 4" />
+          <text x="38" y="44" class="section-label">1. publish new semantic meaning - transaction can fail</text>
+
+          <rect x="70" y="74" width="288" height="72" rx="8" fill="#1a1d27" stroke="#6366f1" filter="url(#soft-shadow)" />
+          <text x="90" y="100" class="node-title mono">semantic_field_definitions</text>
+          <text x="90" y="122" class="node-subtitle">attempt INSERT v2 + supersede v1</text>
+          <text x="90" y="138" class="node-subtitle">inside one DB transaction</text>
+
+          <rect x="420" y="74" width="288" height="72" rx="8" fill="#1a1d27" stroke="#22d3ee" filter="url(#soft-shadow)" />
+          <text x="440" y="100" class="node-title mono">dataset_field_bindings</text>
+          <text x="440" y="122" class="node-subtitle">attempt SET is_stale = true</text>
+          <text x="440" y="138" class="node-subtitle">same transaction as definition write</text>
+
+          <rect x="770" y="74" width="288" height="72" rx="8" fill="#1a1d27" stroke="#f43f5e" filter="url(#soft-shadow)" />
+          <text x="790" y="100" class="node-title mono">failure state</text>
+          <text x="790" y="122" class="node-subtitle">transaction rolls back completely</text>
+          <text x="790" y="138" class="node-subtitle">no v2, no stale bindings, no event</text>
+
+          <line x1="358" y1="110" x2="418" y2="110" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow-purple)" />
+          <line x1="708" y1="110" x2="768" y2="110" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-red)" />
+          <text x="740" y="98" font-size="11" fill="#f43f5e" text-anchor="middle">if any write fails</text>
+
+          <rect x="20" y="198" width="1080" height="170" rx="10" fill="rgba(34,211,238,0.045)" stroke="#21404b" stroke-dasharray="5 4" />
+          <text x="38" y="220" class="section-label">2. find affected datasets - impact discovery can fail</text>
+
+          <rect x="70" y="250" width="288" height="82" rx="8" fill="#1a1d27" stroke="#22d3ee" filter="url(#soft-shadow)" />
+          <text x="90" y="276" class="node-title mono">dataset_field_bindings</text>
+          <text x="90" y="298" class="node-subtitle">READ direct stale bindings</text>
+          <text x="90" y="316" class="node-subtitle">definition v2 already exists</text>
+
+          <rect x="420" y="250" width="288" height="82" rx="8" fill="#1a1d27" stroke="#22d3ee" filter="url(#soft-shadow)" />
+          <text x="440" y="276" class="node-title mono">dataset_lineage</text>
+          <text x="440" y="298" class="node-subtitle">READ downstream graph</text>
+          <text x="440" y="316" class="node-subtitle">cycle / missing edge / query failure</text>
+
+          <rect x="770" y="250" width="288" height="82" rx="8" fill="#1a1d27" stroke="#f43f5e" filter="url(#soft-shadow)" />
+          <text x="790" y="276" class="node-title mono">propagation_events</text>
+          <text x="790" y="298" class="node-subtitle">INSERT event with status = failed</text>
+          <text x="790" y="316" class="node-subtitle">error: impact assessment failed</text>
+
+          <line x1="358" y1="291" x2="418" y2="291" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrow-cyan)" />
+          <line x1="708" y1="291" x2="768" y2="291" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-red)" />
+
+          <rect x="20" y="394" width="1080" height="184" rx="10" fill="rgba(245,158,11,0.055)" stroke="#4a3416" stroke-dasharray="5 4" />
+          <text x="38" y="416" class="section-label">3. create propagation plan - task insertion can fail</text>
+
+          <rect x="70" y="448" width="288" height="82" rx="8" fill="#1a1d27" stroke="#f59e0b" filter="url(#soft-shadow)" />
+          <text x="90" y="474" class="node-title mono">propagation_events</text>
+          <text x="90" y="496" class="node-subtitle">event exists: status = in_progress</text>
+          <text x="90" y="514" class="node-subtitle">old_definition_id = v1, new = v2</text>
+
+          <rect x="420" y="448" width="288" height="82" rx="8" fill="#1a1d27" stroke="#f59e0b" filter="url(#soft-shadow)" />
+          <text x="440" y="474" class="node-title mono">propagation_tasks</text>
+          <text x="440" y="496" class="node-subtitle">attempt bulk insert all tasks</text>
+          <text x="440" y="514" class="node-subtitle">depth, blockers, recompute_reason</text>
+
+          <rect x="770" y="448" width="288" height="82" rx="8" fill="#1a1d27" stroke="#f43f5e" filter="url(#soft-shadow)" />
+          <text x="790" y="474" class="node-title mono">failure state</text>
+          <text x="790" y="496" class="node-subtitle">task insert transaction rolls back</text>
+          <text x="790" y="514" class="node-subtitle">event.status = failed, no partial plan</text>
+
+          <line x1="358" y1="489" x2="418" y2="489" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow-amber)" />
+          <line x1="708" y1="489" x2="768" y2="489" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-red)" />
+
+          <rect x="20" y="604" width="1080" height="200" rx="10" fill="rgba(16,185,129,0.055)" stroke="#1d4739" stroke-dasharray="5 4" />
+          <text x="38" y="626" class="section-label">4. task completion and promotion - one dataset can fail</text>
+
+          <rect x="70" y="662" width="288" height="82" rx="8" fill="#1a1d27" stroke="#10b981" filter="url(#soft-shadow)" />
+          <text x="90" y="688" class="node-title mono">propagation_tasks</text>
+          <text x="90" y="710" class="node-subtitle">attempt complete one task</text>
+          <text x="90" y="728" class="node-subtitle">promote only after validation</text>
+
+          <rect x="420" y="662" width="288" height="82" rx="8" fill="#1a1d27" stroke="#10b981" filter="url(#soft-shadow)" />
+          <text x="440" y="688" class="node-title mono">datasets + bindings</text>
+          <text x="440" y="710" class="node-subtitle">promotion/binding update fails</text>
+          <text x="440" y="728" class="node-subtitle">transaction keeps old read pointer</text>
+
+          <rect x="770" y="662" width="288" height="82" rx="8" fill="#1a1d27" stroke="#f43f5e" filter="url(#soft-shadow)" />
+          <text x="790" y="688" class="node-title mono">failed task state</text>
+          <text x="790" y="710" class="node-subtitle">task.status = failed</text>
+          <text x="790" y="728" class="node-subtitle">attempt_count++, error_message set</text>
+
+          <line x1="358" y1="703" x2="418" y2="703" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)" />
+          <line x1="708" y1="703" x2="768" y2="703" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-red)" />
+
+          <rect x="126" y="764" width="860" height="24" rx="12" fill="rgba(244,63,94,0.09)" stroke="rgba(244,63,94,0.45)" />
+          <text x="556" y="781" font-size="11" fill="#fda4af" text-anchor="middle">
+            downstream tasks stay blocked because blocked_by_task_ids still include the failed upstream task
+          </text>
+
+          <rect x="20" y="830" width="1080" height="118" rx="10" fill="rgba(244,63,94,0.055)" stroke="#4c1d2a" stroke-dasharray="5 4" />
+          <text x="38" y="852" class="section-label">5. final propagation event status - completion cannot be claimed</text>
+
+          <rect x="70" y="878" width="288" height="52" rx="8" fill="#1a1d27" stroke="#f43f5e" filter="url(#soft-shadow)" />
+          <text x="90" y="902" class="node-title mono">propagation_events</text>
+          <text x="90" y="920" class="node-subtitle">status = failed</text>
+
+          <rect x="420" y="878" width="288" height="52" rx="8" fill="#1a1d27" stroke="#f43f5e" filter="url(#soft-shadow)" />
+          <text x="440" y="902" class="node-title mono">propagation_tasks</text>
+          <text x="440" y="920" class="node-subtitle">mix of completed / failed / blocked</text>
+
+          <rect x="770" y="878" width="288" height="52" rx="8" fill="#1a1d27" stroke="#f43f5e" filter="url(#soft-shadow)" />
+          <text x="790" y="902" class="node-title mono">tenant-visible state</text>
+          <text x="790" y="920" class="node-subtitle">old committed outputs remain readable</text>
+
+          <line x1="358" y1="904" x2="418" y2="904" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-red)" />
+          <line x1="708" y1="904" x2="768" y2="904" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow-red)" />
+        </svg>
+      </section>
+
+      <section class="cards" aria-label="Failure table states">
+        <article class="state-card">
+          <h2>Early Failure</h2>
+          <ul>
+            <li>If the initial transaction fails, no new <code>semantic_field_definitions</code> row is committed.</li>
+            <li>No <code>dataset_field_bindings</code> rows are marked stale.</li>
+            <li>No <code>propagation_events</code> or <code>propagation_tasks</code> rows should exist for that failed attempt.</li>
+          </ul>
+        </article>
+
+        <article class="state-card">
+          <h2>Discovery Failure</h2>
+          <ul>
+            <li>The definition update may already be committed, so stale bindings remain visible.</li>
+            <li><code>propagation_events.status</code> becomes <code>failed</code> with an impact-assessment error.</li>
+            <li>No incomplete task set is allowed to drive recomputation.</li>
+          </ul>
+        </article>
+
+        <article class="state-card">
+          <h2>Planning Failure</h2>
+          <ul>
+            <li>Task creation is transactional: either all <code>propagation_tasks</code> rows are inserted or none are.</li>
+            <li>The event is marked <code>failed</code> if a complete plan cannot be persisted.</li>
+            <li>Bindings stay stale until a retry or rollback event handles them.</li>
+          </ul>
+        </article>
+
+        <article class="state-card">
+          <h2>Execution Failure</h2>
+          <ul>
+            <li>The failed dataset keeps its old <code>datasets.current_materialization_uri</code>.</li>
+            <li>Its task records <code>failed</code>, <code>attempt_count</code>, and <code>error_message</code>.</li>
+            <li>Downstream tasks stay <code>blocked</code>; the event cannot become <code>completed</code>.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="sequence" aria-label="Failure sequence">
+        <h2>Failure Coverage By Success Phase</h2>
+        <ol>
+          <li><strong>Publish phase:</strong> a failed definition/binding transaction rolls back, leaving all tables unchanged.</li>
+          <li><strong>Impact discovery phase:</strong> the semantic update exists, direct bindings are stale, and the propagation event is marked failed because the affected graph was not safely computed.</li>
+          <li><strong>Planning phase:</strong> the event exists, but task insertion fails atomically, so the event is failed and no partial task graph is used.</li>
+          <li><strong>Completion phase:</strong> a task fails before promotion, so the dataset read pointer and direct bindings remain on the previous committed state.</li>
+          <li><strong>Final status phase:</strong> any failed or blocked task prevents <code>propagation_events.status</code> from becoming <code>completed</code>.</li>
+        </ol>
+      </section>
+    </div>
+  </main>
+<script src="assets/nav.js"></script>
+</body>
+</html>

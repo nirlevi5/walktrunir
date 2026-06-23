@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Successful Semantic Update - Table Flow</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .intro {
+      max-width: 860px;
+      margin: -26px auto 34px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.65;
+      text-align: center;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .canvas {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008)),
+        var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px;
+      overflow-x: auto;
+      margin-bottom: 32px;
+    }
+
+    svg {
+      display: block;
+      min-width: 1060px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+      fill: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .node-title {
+      font-size: 13px;
+      font-weight: 800;
+      fill: var(--text);
+    }
+
+    .node-subtitle {
+      font-size: 11px;
+      fill: var(--muted);
+    }
+
+    .mono {
+      font-family: Consolas, "Fira Code", monospace;
+    }
+
+    .op {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 860px) {
+      .cards { grid-template-columns: 1fr; }
+      .page-content { padding: 28px 16px; }
+    }
+
+    .state-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .state-card h2 {
+      font-size: 0.84rem;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .state-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .state-card li {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.55;
+      display: flex;
+      gap: 8px;
+    }
+
+    .state-card li::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      margin-top: 8px;
+      flex-shrink: 0;
+    }
+
+    .sequence {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .sequence h2 {
+      font-size: 0.84rem;
+      margin-bottom: 14px;
+    }
+
+    .sequence ol {
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page-content">
+    <div class="wrap">
+      <h1>Successful Semantic Update - Table Flow</h1>
+      <p class="subtitle">Only the metadata tables and their state transitions</p>
+
+      <p class="intro">
+        This illustrates what happens inside the suggested tables when a new semantic definition is published successfully.
+        It intentionally excludes AWS services, queues, jobs, and operational failure branches.
+      </p>
+
+      <div class="legend" aria-label="Legend">
+        <div class="legend-item"><span class="swatch" style="background:#6366f1"></span>Definition versioning</div>
+        <div class="legend-item"><span class="swatch" style="background:#22d3ee"></span>Bindings and lineage reads</div>
+        <div class="legend-item"><span class="swatch" style="background:#f59e0b"></span>Propagation records</div>
+        <div class="legend-item"><span class="swatch" style="background:#10b981"></span>Successful completion</div>
+      </div>
+
+      <section class="canvas" aria-label="Successful table update flow diagram">
+        <svg viewBox="0 0 1060 760" role="img" aria-labelledby="diagram-title diagram-desc">
+          <title id="diagram-title">Successful semantic update table flow</title>
+          <desc id="diagram-desc">
+            A flow showing semantic_field_definitions, dataset_field_bindings, dataset_lineage,
+            propagation_events, propagation_tasks, and datasets table updates during a successful semantic update.
+          </desc>
+
+          <defs>
+            <marker id="arrow-purple" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#6366f1" />
+            </marker>
+            <marker id="arrow-cyan" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#22d3ee" />
+            </marker>
+            <marker id="arrow-amber" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#f59e0b" />
+            </marker>
+            <marker id="arrow-green" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L9,4 L0,8 Z" fill="#10b981" />
+            </marker>
+            <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="130%">
+              <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.22" />
+            </filter>
+          </defs>
+
+          <rect x="20" y="22" width="1020" height="140" rx="10" fill="rgba(99,102,241,0.06)" stroke="#303452" stroke-dasharray="5 4" />
+          <text x="38" y="44" class="section-label">1. publish new semantic meaning</text>
+
+          <rect x="72" y="72" width="292" height="72" rx="8" fill="#1a1d27" stroke="#6366f1" filter="url(#soft-shadow)" />
+          <text x="92" y="98" class="node-title mono">semantic_field_definitions</text>
+          <text x="92" y="120" class="node-subtitle">INSERT v2: iso8601_date</text>
+          <text x="92" y="136" class="node-subtitle">UPDATE v1.superseded_by = v2</text>
+          <text x="308" y="96" class="op" fill="#6366f1">WRITE</text>
+
+          <rect x="700" y="72" width="292" height="72" rx="8" fill="#1a1d27" stroke="#22d3ee" filter="url(#soft-shadow)" />
+          <text x="720" y="98" class="node-title mono">dataset_field_bindings</text>
+          <text x="720" y="120" class="node-subtitle">UPDATE old direct bindings</text>
+          <text x="720" y="136" class="node-subtitle">SET is_stale = true</text>
+          <text x="936" y="96" class="op" fill="#22d3ee">WRITE</text>
+
+          <line x1="365" y1="108" x2="698" y2="108" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow-purple)" />
+          <text x="532" y="98" font-size="11" fill="#94a3b8" text-anchor="middle">same DB transaction</text>
+
+          <rect x="20" y="194" width="1020" height="170" rx="10" fill="rgba(34,211,238,0.045)" stroke="#21404b" stroke-dasharray="5 4" />
+          <text x="38" y="216" class="section-label">2. find affected datasets</text>
+
+          <rect x="72" y="244" width="292" height="82" rx="8" fill="#1a1d27" stroke="#22d3ee" filter="url(#soft-shadow)" />
+          <text x="92" y="270" class="node-title mono">dataset_field_bindings</text>
+          <text x="92" y="292" class="node-subtitle">READ WHERE definition_id = v1</text>
+          <text x="92" y="310" class="node-subtitle">directly affected datasets S0</text>
+          <text x="310" y="268" class="op" fill="#22d3ee">READ</text>
+
+          <rect x="700" y="244" width="292" height="82" rx="8" fill="#1a1d27" stroke="#22d3ee" filter="url(#soft-shadow)" />
+          <text x="720" y="270" class="node-title mono">dataset_lineage</text>
+          <text x="720" y="292" class="node-subtitle">READ downstream edges from S0</text>
+          <text x="720" y="310" class="node-subtitle">compute transitive impact set</text>
+          <text x="936" y="268" class="op" fill="#22d3ee">READ</text>
+
+          <line x1="365" y1="285" x2="698" y2="285" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrow-cyan)" />
+          <text x="532" y="275" font-size="11" fill="#94a3b8" text-anchor="middle">BFS / topological sort input</text>
+
+          <rect x="20" y="396" width="1020" height="164" rx="10" fill="rgba(245,158,11,0.055)" stroke="#4a3416" stroke-dasharray="5 4" />
+          <text x="38" y="418" class="section-label">3. create propagation plan</text>
+
+          <rect x="72" y="444" width="292" height="78" rx="8" fill="#1a1d27" stroke="#f59e0b" filter="url(#soft-shadow)" />
+          <text x="92" y="470" class="node-title mono">propagation_events</text>
+          <text x="92" y="492" class="node-subtitle">INSERT event: v1 -> v2</text>
+          <text x="92" y="510" class="node-subtitle">status = in_progress</text>
+          <text x="310" y="468" class="op" fill="#f59e0b">WRITE</text>
+
+          <rect x="700" y="444" width="292" height="78" rx="8" fill="#1a1d27" stroke="#f59e0b" filter="url(#soft-shadow)" />
+          <text x="720" y="470" class="node-title mono">propagation_tasks</text>
+          <text x="720" y="492" class="node-subtitle">INSERT one task per affected dataset</text>
+          <text x="720" y="510" class="node-subtitle">depth, blockers, recompute_reason</text>
+          <text x="936" y="468" class="op" fill="#f59e0b">WRITE</text>
+
+          <line x1="365" y1="483" x2="698" y2="483" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow-amber)" />
+          <text x="532" y="473" font-size="11" fill="#94a3b8" text-anchor="middle">event owns all tasks</text>
+
+          <rect x="20" y="592" width="1020" height="142" rx="10" fill="rgba(16,185,129,0.055)" stroke="#1d4739" stroke-dasharray="5 4" />
+          <text x="38" y="614" class="section-label">4. successful task completion and promotion</text>
+
+          <rect x="72" y="640" width="292" height="70" rx="8" fill="#1a1d27" stroke="#10b981" filter="url(#soft-shadow)" />
+          <text x="92" y="666" class="node-title mono">propagation_tasks</text>
+          <text x="92" y="688" class="node-subtitle">UPDATE task.status = completed</text>
+          <text x="310" y="664" class="op" fill="#10b981">WRITE</text>
+
+          <rect x="384" y="640" width="292" height="70" rx="8" fill="#1a1d27" stroke="#10b981" filter="url(#soft-shadow)" />
+          <text x="404" y="666" class="node-title mono">datasets</text>
+          <text x="404" y="688" class="node-subtitle">UPDATE current_materialization_uri</text>
+          <text x="622" y="664" class="op" fill="#10b981">WRITE</text>
+
+          <rect x="700" y="640" width="292" height="70" rx="8" fill="#1a1d27" stroke="#10b981" filter="url(#soft-shadow)" />
+          <text x="720" y="666" class="node-title mono">dataset_field_bindings</text>
+          <text x="720" y="688" class="node-subtitle">direct tasks: definition_id = v2</text>
+          <text x="936" y="664" class="op" fill="#10b981">WRITE</text>
+
+          <line x1="218" y1="328" x2="218" y2="442" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrow-cyan)" />
+          <line x1="846" y1="328" x2="846" y2="442" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrow-cyan)" />
+          <line x1="218" y1="524" x2="218" y2="638" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow-amber)" />
+          <line x1="846" y1="524" x2="846" y2="638" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow-amber)" />
+          <line x1="365" y1="675" x2="382" y2="675" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)" />
+          <line x1="677" y1="675" x2="698" y2="675" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)" />
+
+          <path d="M846 710 C846 744 540 744 218 710" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)" />
+          <text x="532" y="738" font-size="11" fill="#94a3b8" text-anchor="middle">repeat by topological order until no blocked tasks remain</text>
+
+          <rect x="384" y="244" width="292" height="82" rx="8" fill="#11141d" stroke="#2e3146" />
+          <text x="404" y="270" class="node-title mono">affected subgraph</text>
+          <text x="404" y="292" class="node-subtitle">S0 direct + transitive downstream</text>
+          <text x="404" y="310" class="node-subtitle">ordered upstream before downstream</text>
+
+          <rect x="384" y="444" width="292" height="78" rx="8" fill="#11141d" stroke="#2e3146" />
+          <text x="404" y="470" class="node-title mono">task metadata</text>
+          <text x="404" y="492" class="node-subtitle">blocked_by_task_ids</text>
+          <text x="404" y="510" class="node-subtitle">binding ids to update, if direct</text>
+        </svg>
+      </section>
+
+      <section class="cards" aria-label="Final table states">
+        <article class="state-card">
+          <h2>Definition State</h2>
+          <ul>
+            <li><code>semantic_field_definitions</code> has both v1 and v2.</li>
+            <li>v1 keeps its old semantic contents but points to v2 via <code>superseded_by</code>.</li>
+            <li>v2 is the current semantic definition for <code>event_timestamp</code>.</li>
+          </ul>
+        </article>
+
+        <article class="state-card">
+          <h2>Planning State</h2>
+          <ul>
+            <li><code>dataset_lineage</code> is read, not changed.</li>
+            <li><code>propagation_events</code> stores the overall correction event.</li>
+            <li><code>propagation_tasks</code> stores every affected dataset and its blockers.</li>
+          </ul>
+        </article>
+
+        <article class="state-card">
+          <h2>Completion State</h2>
+          <ul>
+            <li>Completed tasks promote the dataset read pointer in <code>datasets</code>.</li>
+            <li>Direct bindings move from v1 to v2 and clear <code>is_stale</code>.</li>
+            <li>Transitive-only tasks complete without creating fake semantic bindings.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="sequence" aria-label="Successful sequence">
+        <h2>Successful Sequence</h2>
+        <ol>
+          <li>Insert the new semantic version in <code>semantic_field_definitions</code> and mark the prior version as superseded.</li>
+          <li>Mark direct <code>dataset_field_bindings</code> rows that used the prior definition as stale.</li>
+          <li>Read direct stale bindings, then read <code>dataset_lineage</code> to find all transitive downstream datasets.</li>
+          <li>Create one <code>propagation_events</code> row and one <code>propagation_tasks</code> row for each affected dataset.</li>
+          <li>As each dataset successfully recomputes, mark its task completed, promote its materialization pointer, and update direct bindings to the new definition.</li>
+          <li>When all tasks are completed, mark the propagation event completed.</li>
+        </ol>
+      </section>
+    </div>
+  </main>
+<script src="assets/nav.js"></script>
+</body>
+</html>

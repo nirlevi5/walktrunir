@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow Diagram — Semantic Change Lifecycle</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .diagram-wrap {
+      max-width: 1080px;
+      margin: 0 auto 48px;
+      overflow-x: auto;
+    }
+    #flow { display: block; margin: 0 auto; }
+
+    .legend-row {
+      max-width: 860px;
+      margin: 0 auto 40px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+    .notes-grid {
+      max-width: 960px;
+      margin: 0 auto 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) { .notes-grid { grid-template-columns: 1fr; } }
+    .note-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .note-card h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .note-card ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .note-card li {
+      font-size: 0.81rem;
+      color: var(--muted);
+      line-height: 1.55;
+      display: flex;
+      gap: 8px;
+    }
+    .note-card li::before { font-weight: 700; flex-shrink: 0; content: '·'; }
+    .note-success h3 { color: var(--accent4); }
+    .note-success li::before { color: var(--accent4); }
+    .note-failure h3 { color: var(--accent5); }
+    .note-failure li::before { color: var(--accent5); }
+  </style>
+</head>
+<body>
+<div class="page-content">
+
+  <h1>Semantic Change — Flow Diagram</h1>
+  <p class="subtitle">Top-to-bottom lifecycle · success path · failure branches · per Document 2</p>
+
+  <div class="legend-row">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#6366f1;border-radius:6px"></div>
+      Main flow
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#22d3ee"></div>
+      AWS service
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#10b981"></div>
+      Success terminal
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#f59e0b;border-radius:50%"></div>
+      Decision
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#f43f5e"></div>
+      Failure branch
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+  <svg id="flow" viewBox="0 0 1080 1290" width="1080"
+       xmlns="http://www.w3.org/2000/svg"
+       font-family="'Segoe UI',system-ui,sans-serif">
+    <defs>
+      <marker id="am" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#6366f1"/></marker>
+      <marker id="ac" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#22d3ee"/></marker>
+      <marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#10b981"/></marker>
+      <marker id="af" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#f43f5e"/></marker>
+      <marker id="aw" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#f59e0b"/></marker>
+    </defs>
+
+    <!-- ── ZONE BACKGROUNDS ── -->
+    <rect x="12" y="24"  width="1056" height="336" rx="10" fill="rgba(99,102,241,0.04)"  stroke="#2a2e44" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="24" y="40"  font-size="9.5" fill="#3f4468" font-weight="700" letter-spacing="0.1em">INGESTION</text>
+
+    <rect x="12" y="376" width="1056" height="256" rx="10" fill="rgba(34,211,238,0.03)"  stroke="#1e3340" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="24" y="392" font-size="9.5" fill="#1c4050" font-weight="700" letter-spacing="0.1em">DAG PLANNING</text>
+
+    <rect x="12" y="648" width="1056" height="348" rx="10" fill="rgba(99,102,241,0.03)"  stroke="#2a2e44" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="24" y="664" font-size="9.5" fill="#3f4468" font-weight="700" letter-spacing="0.1em">EXECUTION  (parallel workers per dataset × tenant)</text>
+
+    <rect x="12" y="1012" width="1056" height="264" rx="10" fill="rgba(16,185,129,0.04)"  stroke="#1a3830" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="24" y="1028" font-size="9.5" fill="#0d4a31" font-weight="700" letter-spacing="0.1em">COMPLETION</text>
+
+    <!-- ══════════════════════════════════════════════
+         MAIN FLOW ARROWS
+    ══════════════════════════════════════════════════ -->
+
+    <!-- N1 → N2 -->
+    <line x1="530" y1="100" x2="530" y2="146" stroke="#6366f1" stroke-width="2" marker-end="url(#am)"/>
+    <!-- N2 → N3 (EventBridge, cyan) -->
+    <line x1="530" y1="244" x2="530" y2="298" stroke="#22d3ee" stroke-width="2" marker-end="url(#ac)"/>
+    <!-- N3 → N4 -->
+    <line x1="530" y1="354" x2="530" y2="412" stroke="#22d3ee" stroke-width="2" marker-end="url(#ac)"/>
+    <!-- N4 → N5a (Batch Queue) -->
+    <path d="M530,508 V532 H291 V562" fill="none" stroke="#6366f1" stroke-width="2" marker-end="url(#am)"/>
+    <!-- N4 → N5b (Streaming Queue) -->
+    <path d="M530,508 V532 H769 V562" fill="none" stroke="#6366f1" stroke-width="2" marker-end="url(#am)"/>
+    <!-- N5a → N6 (batch side) -->
+    <line x1="291" y1="616" x2="291" y2="658" stroke="#6366f1" stroke-width="2" marker-end="url(#am)"/>
+    <!-- N5b → N6 (streaming side) -->
+    <line x1="769" y1="616" x2="769" y2="658" stroke="#6366f1" stroke-width="2" marker-end="url(#am)"/>
+    <!-- N6 → N7 (success, green) -->
+    <line x1="530" y1="758" x2="530" y2="820" stroke="#10b981" stroke-width="2" marker-end="url(#ag)"/>
+    <text x="536" y="793" font-size="10" fill="#10b981" font-weight="600">success</text>
+    <!-- N7 → N8 diamond -->
+    <line x1="530" y1="918" x2="530" y2="1010" stroke="#6366f1" stroke-width="2" marker-end="url(#am)"/>
+    <text x="448" y="968" font-size="9.5" fill="#94a3b8" font-style="italic">releases next wave only after blockers complete</text>
+    <!-- N8 → N9 (all completed) -->
+    <line x1="530" y1="1076" x2="530" y2="1122" stroke="#10b981" stroke-width="2" marker-end="url(#ag)"/>
+    <text x="536" y="1103" font-size="10" fill="#10b981" font-weight="600">all done</text>
+    <!-- N9 → N10 -->
+    <line x1="530" y1="1180" x2="530" y2="1224" stroke="#10b981" stroke-width="2" marker-end="url(#ag)"/>
+
+    <!-- ══════════════════════════════════════════════
+         FAILURE ARROWS
+    ══════════════════════════════════════════════════ -->
+
+    <!-- N2 → L1: validation error (left) -->
+    <line x1="384" y1="178" x2="266" y2="178" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#af)"/>
+    <text x="305" y="168" font-size="9.5" fill="#f43f5e" font-weight="600" text-anchor="middle">invalid</text>
+
+    <!-- N6 → R_fail: retry threshold reached (right) -->
+    <line x1="838" y1="706" x2="856" y2="706" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#aw)"/>
+    <text x="847" y="695" font-size="9.5" fill="#f59e0b" font-weight="600" text-anchor="middle">×3 fail</text>
+
+    <!-- N8 → L2: propagation failure (left) -->
+    <line x1="410" y1="1043" x2="274" y2="1043" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#af)"/>
+    <text x="342" y="1033" font-size="9.5" fill="#f43f5e" font-weight="600" text-anchor="middle">any FAILED</text>
+
+    <!-- ══════════════════════════════════════════════
+         NODES — MAIN FLOW
+    ══════════════════════════════════════════════════ -->
+
+    <!-- N1: START pill -->
+    <rect x="402" y="44" width="256" height="56" rx="28" fill="#6366f1"/>
+    <text x="530" y="67" text-anchor="middle" font-size="12.5" fill="white" font-weight="700">Engineer submits</text>
+    <text x="530" y="84" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.82)">POST /definitions/{field}/correct</text>
+
+    <!-- N2: Lambda — Metadata Writer -->
+    <rect x="384" y="148" width="292" height="96" rx="10" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="530" y="170" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="700">Lambda: Metadata Writer</text>
+    <text x="530" y="187" text-anchor="middle" font-size="10" fill="#94a3b8">① insert semantic_field_definitions (new version row)</text>
+    <text x="530" y="202" text-anchor="middle" font-size="10" fill="#94a3b8">② set superseded_by on old definition</text>
+    <text x="530" y="217" text-anchor="middle" font-size="10" fill="#94a3b8">③ bulk is_stale=true on dataset_field_bindings</text>
+    <text x="530" y="233" text-anchor="middle" font-size="9.5" fill="#6366f1" font-style="italic">one Aurora Serverless v2 transaction</text>
+
+    <!-- L1: Validation Error -->
+    <rect x="28" y="152" width="238" height="52" rx="8" fill="#1a1d27" stroke="#f43f5e" stroke-width="1.5"/>
+    <text x="147" y="174" text-anchor="middle" font-size="11" fill="#f43f5e" font-weight="600">400 Validation Error</text>
+    <text x="147" y="190" text-anchor="middle" font-size="10" fill="#94a3b8">API Gateway rejects; no DB write</text>
+
+    <!-- N3: EventBridge -->
+    <rect x="384" y="300" width="292" height="54" rx="10" fill="#1a1d27" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="530" y="323" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="600">EventBridge: DefinitionCorrected</text>
+    <text x="530" y="340" text-anchor="middle" font-size="10.5" fill="#94a3b8">custom bus · decoupled · replay-enabled</text>
+
+    <!-- N4: Lambda — DAG Traversal -->
+    <rect x="384" y="414" width="292" height="94" rx="10" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="530" y="436" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="700">Lambda: DAG Traversal</text>
+    <text x="530" y="453" text-anchor="middle" font-size="10" fill="#94a3b8">BFS via dataset_lineage (recursive CTE on Aurora)</text>
+    <text x="530" y="468" text-anchor="middle" font-size="10" fill="#94a3b8">bulk-insert propagation_tasks (all depths + blocked_by)</text>
+    <text x="530" y="483" text-anchor="middle" font-size="10" fill="#94a3b8">create propagation_events row</text>
+    <text x="530" y="499" text-anchor="middle" font-size="9.5" fill="#6366f1" font-style="italic">enqueue ONLY depth-0 tasks to SQS</text>
+
+    <!-- N5a: SQS Batch Task Queue -->
+    <rect x="170" y="564" width="242" height="52" rx="9" fill="#1a1d27" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="291" y="586" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">SQS: Batch Task Queue</text>
+    <text x="291" y="602" text-anchor="middle" font-size="9.5" fill="#94a3b8">start message · retries tracked in DB</text>
+
+    <!-- N5b: SQS Streaming Task Queue -->
+    <rect x="648" y="564" width="242" height="52" rx="9" fill="#1a1d27" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="769" y="586" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="600">SQS: Streaming Task Queue</text>
+    <text x="769" y="602" text-anchor="middle" font-size="9.5" fill="#94a3b8">control message · DLQ after 3×</text>
+
+    <!-- N6: Parallel task handlers (split box) -->
+    <!-- Outer box -->
+    <rect x="100" y="660" width="736" height="98" rx="10" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="6 3"/>
+    <!-- Internal divider -->
+    <line x1="468" y1="668" x2="468" y2="750" stroke="#2e3146" stroke-width="1.5"/>
+    <!-- Left half: Batch -->
+    <text x="284" y="682" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="700">Lambda: Batch Task Starter</text>
+    <text x="284" y="698" text-anchor="middle" font-size="10" fill="#94a3b8">update task status → in_progress</text>
+    <text x="284" y="713" text-anchor="middle" font-size="10" fill="#94a3b8">start Glue / EMR Serverless job</text>
+    <text x="284" y="729" text-anchor="middle" font-size="9.5" fill="#6366f1" font-style="italic">completion via EventBridge job events</text>
+    <text x="284" y="744" text-anchor="middle" font-size="9.5" fill="#94a3b8">→ invoke Completion Handler on done</text>
+    <!-- Right half: Streaming -->
+    <text x="654" y="682" text-anchor="middle" font-size="11" fill="#e2e8f0" font-weight="700">Lambda: Streaming Task Handler</text>
+    <text x="654" y="698" text-anchor="middle" font-size="10" fill="#94a3b8">pause consumer (ESM / MSK group)</text>
+    <text x="654" y="713" text-anchor="middle" font-size="10" fill="#94a3b8">drain → update config → backfill</text>
+    <text x="654" y="729" text-anchor="middle" font-size="9.5" fill="#6366f1" font-style="italic">interim state in DynamoDB</text>
+    <text x="654" y="744" text-anchor="middle" font-size="9.5" fill="#94a3b8">→ invoke Completion Handler on done</text>
+
+    <!-- R_fail: failed task / alarm -->
+    <rect x="852" y="676" width="204" height="82" rx="8" fill="#1a1d27" stroke="#f43f5e" stroke-width="1.5"/>
+    <text x="954" y="698" text-anchor="middle" font-size="11" fill="#f43f5e" font-weight="600">Retries exhausted</text>
+    <text x="954" y="714" text-anchor="middle" font-size="10" fill="#94a3b8">task → FAILED · alarm</text>
+    <text x="954" y="728" text-anchor="middle" font-size="10" fill="#94a3b8">CloudWatch Alarm</text>
+    <text x="954" y="742" text-anchor="middle" font-size="10" fill="#94a3b8">PagerDuty / SNS</text>
+
+    <!-- N7: Lambda — Completion Handler -->
+    <rect x="344" y="822" width="372" height="96" rx="10" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="530" y="844" text-anchor="middle" font-size="12" fill="#e2e8f0" font-weight="700">Lambda: Completion Handler</text>
+    <text x="530" y="861" text-anchor="middle" font-size="10" fill="#94a3b8">① mark propagation_task = completed · completed_at</text>
+    <text x="530" y="876" text-anchor="middle" font-size="10" fill="#94a3b8">② promote datasets.current_materialization_uri</text>
+    <text x="530" y="891" text-anchor="middle" font-size="10" fill="#94a3b8">③ direct bindings only: new def · is_stale=false</text>
+    <text x="530" y="907" text-anchor="middle" font-size="9.5" fill="#6366f1" font-style="italic">④ increment completed count + enqueue unblocked</text>
+
+    <!-- ══════════════════════════════════════════════
+         COMPLETION NODES
+    ══════════════════════════════════════════════════ -->
+
+    <!-- N8: Decision diamond -->
+    <polygon points="530,1012 650,1043 530,1074 410,1043" fill="#1a1d27" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="530" y="1038" text-anchor="middle" font-size="11" fill="#f59e0b" font-weight="700">All tasks</text>
+    <text x="530" y="1054" text-anchor="middle" font-size="11" fill="#f59e0b" font-weight="700">completed?</text>
+
+    <!-- L2: Propagation failure -->
+    <rect x="28" y="1018" width="248" height="62" rx="8" fill="#1a1d27" stroke="#f43f5e" stroke-width="1.5"/>
+    <text x="152" y="1040" text-anchor="middle" font-size="11" fill="#f43f5e" font-weight="600">propagation_events.status</text>
+    <text x="152" y="1056" text-anchor="middle" font-size="11" fill="#f43f5e" font-weight="600">= failed</text>
+    <text x="152" y="1071" text-anchor="middle" font-size="9.5" fill="#94a3b8">failed tasks keep downstream blocked</text>
+
+    <!-- N9: propagation_events completed -->
+    <rect x="344" y="1124" width="372" height="56" rx="10" fill="#1a1d27" stroke="#10b981" stroke-width="2"/>
+    <text x="530" y="1148" text-anchor="middle" font-size="12" fill="#10b981" font-weight="700">propagation_events.status = completed</text>
+    <text x="530" y="1165" text-anchor="middle" font-size="10.5" fill="#94a3b8">all affected datasets recomputed and promoted</text>
+
+    <!-- N10: END pill -->
+    <rect x="392" y="1226" width="276" height="52" rx="26" fill="#10b981"/>
+    <text x="530" y="1248" text-anchor="middle" font-size="12.5" fill="white" font-weight="700">Audit trail complete</text>
+    <text x="530" y="1265" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.85)">EventBridge → CloudWatch Logs · Status API</text>
+
+  </svg>
+  </div>
+
+  <!-- NOTES -->
+  <div class="notes-grid">
+    <div class="note-card note-success">
+      <h3>Success path</h3>
+      <ul>
+        <li>Metadata Writer wraps all three Aurora writes in one transaction — the state is consistent before EventBridge fires.</li>
+        <li>DAG Traversal inserts the full task set up front so scope is visible immediately; only depth-0 tasks are enqueued first.</li>
+        <li>Each successful Completion Handler call promotes <code>datasets.current_materialization_uri</code>, increments <code>completed_dataset_count</code>, and releases the next topological wave to SQS — no Step Functions needed.</li>
+        <li>Batch path: Glue / EMR Serverless recomputes data, publishes completion via EventBridge job state change event.</li>
+        <li>Streaming path: consumer is paused, drained, config updated in Parameter Store, historical data is backfilled from the raw S3 archive, then live processing resumes from the drained checkpoint.</li>
+        <li>Rollback is a reverse <code>DefinitionCorrected</code> event — same pipeline, <code>new_definition_id</code> points back to the prior version.</li>
+      </ul>
+    </div>
+    <div class="note-card note-failure">
+      <h3>Failure paths</h3>
+      <ul>
+        <li><strong>Invalid request:</strong> API Gateway schema validation rejects before Lambda runs — no DB write, no EventBridge event.</li>
+        <li><strong>DAG Traversal Lambda failure:</strong> EventBridge archive allows replay of <code>DefinitionCorrected</code> without re-running the correction itself.</li>
+        <li><strong>Task retry:</strong> the failure handler increments <code>attempt_count</code> and enqueues a fresh start/control message below the retry threshold.</li>
+        <li><strong>Task failure:</strong> after repeated failures, the task is marked failed. It is not counted as completed; its dataset keeps the previous committed materialization and direct bindings stay stale until retry or rollback succeeds.</li>
+        <li><strong>Propagation failure:</strong> if any task remains failed or blocked past the retry policy, <code>propagation_events.status = failed</code>; the event is never shown as completed.</li>
+        <li><strong>Partial rollback:</strong> Metadata Writer can scope the <code>is_stale</code> sweep to a single <code>tenant_id</code>, creating tasks only for that tenant.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+<script src="assets/nav.js"></script>
+</body>
+</html>

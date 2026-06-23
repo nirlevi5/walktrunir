@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Walktru — Founding Engineer Home Assignment</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .hero {
+      max-width: 720px;
+      margin: 80px auto 64px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    .problem-block {
+      max-width: 720px;
+      margin: 0 auto 64px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent3);
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+    .problem-block h2 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent3);
+      margin-bottom: 12px;
+    }
+    .problem-block p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+    .problem-block strong {
+      color: var(--text);
+    }
+
+    .doc-grid {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .doc-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, transform 0.12s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .doc-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .doc-card-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .doc-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .doc-card-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .doc-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .status-done { background: var(--accent4); }
+    .status-wip  { background: var(--accent3); }
+  </style>
+</head>
+<body>
+
+<div class="page-content">
+
+  <div class="hero">
+    <h1>Semantic Propagation System</h1>
+    <p>Founding Engineer home assignment — designing how a multi-tenant data platform safely corrects an incorrect semantic field definition and propagates that change across a live dependency graph.</p>
+  </div>
+
+  <div class="problem-block">
+    <h2>The Incident</h2>
+    <p>
+      Field <strong><code>event_timestamp</code></strong> in a shared base dataset was documented as a
+      <strong>free-text string</strong> but actually stores <strong>ISO 8601 dates</strong> (YYYY-MM-DD, UTC, no time component).
+      This field flows into DAU metrics, cross-region aggregations, billing deduplication, ML feature tables, and identity joins —
+      affecting millions of records across multiple tenants.
+      Fixing the definition changes the <em>meaning</em> of historical data without touching the bytes on disk.
+    </p>
+  </div>
+
+  <div class="doc-grid">
+    <a class="doc-card" href="doc1.html">
+      <div class="doc-card-num" style="background:var(--accent)">1</div>
+      <div class="doc-card-title">Data Models</div>
+      <div class="doc-card-desc">
+        Tables for semantic versioning, dataset-to-definition binding, lineage graph, and propagation status tracking.
+        Includes ERD and full column schemas.
+      </div>
+      <div class="doc-card-tags">
+        <span class="tag">5 tables</span>
+        <span class="tag">append-only</span>
+        <span class="tag">ERD</span>
+        <span class="tag"><span class="status-dot status-done"></span>Ready</span>
+      </div>
+    </a>
+
+    <a class="doc-card" href="doc2.html">
+      <div class="doc-card-num" style="background:var(--accent2);color:#0f1117">2</div>
+      <div class="doc-card-title">AWS Architecture</div>
+      <div class="doc-card-desc">
+        Services for metadata storage, trigger on definition change, batch/streaming recomputation orchestration,
+        tenant isolation, and rollback.
+      </div>
+      <div class="doc-card-tags">
+        <span class="tag">Aurora · SQS · EventBridge</span>
+        <span class="tag"><span class="status-dot status-wip"></span>In progress</span>
+      </div>
+    </a>
+
+    <a class="doc-card" href="doc3.html">
+      <div class="doc-card-num" style="background:var(--accent3);color:#0f1117">3</div>
+      <div class="doc-card-title">Update Flow</div>
+      <div class="doc-card-desc">
+        Step-by-step narrative of the full lifecycle when an engineer corrects <code>event_timestamp</code>,
+        with a tradeoffs section on correctness vs cost, eager vs lazy, versioned vs in-place.
+      </div>
+      <div class="doc-card-tags">
+        <span class="tag">end-to-end</span>
+        <span class="tag">tradeoffs</span>
+        <span class="tag"><span class="status-dot status-wip"></span>In progress</span>
+      </div>
+    </a>
+
+    <a class="doc-card" href="flow.html">
+      <div class="doc-card-num" style="background:var(--accent4)">◆</div>
+      <div class="doc-card-title">Flow Diagram</div>
+      <div class="doc-card-desc">
+        Top-to-bottom SVG flow diagram of the full semantic change lifecycle — ingestion, orchestration,
+        parallel execution, success terminal, and all failure branches with retry logic.
+      </div>
+      <div class="doc-card-tags">
+        <span class="tag">success path</span>
+        <span class="tag">failure branches</span>
+        <span class="tag">retry · DLQ</span>
+        <span class="tag"><span class="status-dot status-done"></span>Ready</span>
+      </div>
+    </a>
+
+    <a class="doc-card" href="success_flow_illustration.html">
+      <div class="doc-card-num" style="background:var(--accent4)">✓</div>
+      <div class="doc-card-title">Success Table Flow</div>
+      <div class="doc-card-desc">
+        Table-only illustration of a successful semantic update: new definition version, stale binding sweep,
+        lineage read, propagation tasks, materialization promotion, and binding cleanup.
+      </div>
+      <div class="doc-card-tags">
+        <span class="tag">tables only</span>
+        <span class="tag">success</span>
+        <span class="tag"><span class="status-dot status-done"></span>Ready</span>
+      </div>
+    </a>
+
+    <a class="doc-card" href="failed_flow_illustration.html">
+      <div class="doc-card-num" style="background:var(--accent5)">!</div>
+      <div class="doc-card-title">Failure Table Flow</div>
+      <div class="doc-card-desc">
+        Table-only illustration of failure states at each semantic update phase, including stale bindings,
+        failed tasks, blocked downstream work, and event failure status.
+      </div>
+      <div class="doc-card-tags">
+        <span class="tag">tables only</span>
+        <span class="tag">failures</span>
+        <span class="tag"><span class="status-dot status-done"></span>Ready</span>
+      </div>
+    </a>
+  </div>
+
+</div>
+
+<script src="assets/nav.js"></script>
+</body>
+</html>

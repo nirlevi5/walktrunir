@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doc 3 — Update Flow</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    /* Phase header strip */
+    .phases-bar {
+      max-width: 1100px; margin: 0 auto 40px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .phase-chip {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .phase-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 800; flex-shrink: 0;
+    }
+    .phase-label { font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .phase-sub { font-size: 0.73rem; color: var(--muted); }
+
+    /* Phase section */
+    .phase-section { max-width: 1100px; margin: 0 auto 48px; }
+    .phase-title {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .phase-title h2 { font-size: 1.05rem; color: var(--text); }
+    .phase-title p  { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    /* Step blocks */
+    .steps { display: flex; flex-direction: column; gap: 14px; }
+    .step-block {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .step-header {
+      padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border); background: var(--surface2);
+    }
+    .step-header .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); color: white;
+      font-size: 0.65rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-header h3 { font-size: 0.85rem; color: var(--text); font-weight: 600; }
+    .step-body {
+      padding: 12px 16px; font-size: 0.81rem;
+      color: var(--muted); line-height: 1.65;
+    }
+    .step-body p { margin-bottom: 8px; }
+    .step-body p:last-child { margin-bottom: 0; }
+
+    /* Code blocks */
+    pre.code-block {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 14px; margin: 10px 0;
+      font-family: 'Consolas','Fira Code',monospace;
+      font-size: 0.77rem; color: var(--text);
+      overflow-x: auto; line-height: 1.55;
+      white-space: pre;
+    }
+    pre.code-block .kw  { color: #a78bfa; }
+    pre.code-block .fn  { color: #22d3ee; }
+    pre.code-block .str { color: #86efac; }
+    pre.code-block .cmt { color: #475569; }
+    pre.code-block .val { color: #fbbf24; }
+
+    /* Two-column layout for phase 3 batch/streaming */
+    .two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* Streaming protocol steps */
+    .protocol-steps {
+      display: flex; flex-direction: column; gap: 0;
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    .protocol-step {
+      display: flex; gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .protocol-step:last-child { border-bottom: none; }
+    .proto-num {
+      width: 44px; flex-shrink: 0;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800;
+      border-right: 1px solid var(--border);
+    }
+    .proto-body { padding: 10px 14px; font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+    .proto-body strong { color: var(--text); }
+
+    /* Inconsistency modes */
+    .mode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .mode-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .mode-card h4 { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .mode-card p  { font-size: 0.79rem; color: var(--muted); line-height: 1.6; }
+
+    /* Tradeoffs */
+    .tradeoff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+    .tradeoff-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .tradeoff-header { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .tradeoff-header h4 { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .tradeoff-header p  { font-size: 0.77rem; color: var(--muted); }
+    .tradeoff-body { padding: 12px 16px; }
+    .tradeoff-row {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+      font-size: 0.79rem;
+    }
+    .tradeoff-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .tradeoff-side {
+      flex: 1; color: var(--muted); line-height: 1.5;
+    }
+    .tradeoff-side strong { display: block; margin-bottom: 3px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .tradeoff-vs {
+      flex-shrink: 0; font-size: 0.68rem; font-weight: 800;
+      color: var(--muted); padding-top: 2px;
+    }
+    .chosen strong { color: var(--accent4); }
+    .alt strong    { color: var(--accent5); }
+
+    .sec { margin-bottom: 48px; }
+  </style>
+</head>
+<body>
+<div class="page-content">
+
+<h1>Document 3 — Update Flow</h1>
+<p class="subtitle">End-to-end lifecycle of correcting <code>event_timestamp</code> · from engineer action to consistent data</p>
+
+<!-- ── Phase overview ── -->
+<div class="phases-bar">
+  <div class="phase-chip">
+    <div class="phase-num" style="background:var(--accent);color:white">1</div>
+    <div><div class="phase-label">Submit Correction</div><div class="phase-sub">API call + atomic DB writes</div></div>
+  </div>
+  <div class="phase-chip">
+    <div class="phase-num" style="background:var(--accent2);color:#0f1117">2</div>
+    <div><div class="phase-label">Impact Assessment</div><div class="phase-sub">BFS traversal + task planning</div></div>
+  </div>
+  <div class="phase-chip">
+    <div class="phase-num" style="background:var(--accent4);color:white">3</div>
+    <div><div class="phase-label">Recomputation</div><div class="phase-sub">Batch + streaming execution</div></div>
+  </div>
+  <div class="phase-chip">
+    <div class="phase-num" style="background:var(--accent5);color:white">4</div>
+    <div><div class="phase-label">Completion</div><div class="phase-sub">Wave progression + binding update</div></div>
+  </div>
+</div>
+
+<!-- ── Phase 1 ── -->
+<div class="phase-section sec">
+  <div class="phase-title">
+    <div class="phase-num" style="background:var(--accent);color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;flex-shrink:0">1</div>
+    <div>
+      <h2>Phase 1 — Submitting the Correction</h2>
+      <p>Engineer calls the API. Three writes, one transaction. One event published.</p>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">1</div><h3>API call</h3></div>
+      <div class="step-body">
+        <p>The engineer submits a correction for <code>event_timestamp</code> — previously documented as <code>free_text_string</code>, actually <code>iso8601_date</code> (YYYY-MM-DD, UTC, no time component).</p>
+        <pre class="code-block"><span class="fn">POST</span> /definitions/event_timestamp/correct
+{
+  <span class="str">"semantic_type"</span>:       <span class="str">"iso8601_date"</span>,
+  <span class="str">"description"</span>:         <span class="str">"ISO 8601 calendar date in UTC, no time component (YYYY-MM-DD)."</span>,
+  <span class="str">"time_semantics"</span>:      { <span class="str">"timezone"</span>: <span class="str">"UTC"</span>, <span class="str">"precision"</span>: <span class="str">"day"</span>, <span class="str">"format"</span>: <span class="str">"YYYY-MM-DD"</span> },
+  <span class="str">"nullability_rule"</span>:    <span class="str">"event_did_not_occur"</span>,
+  <span class="str">"uniqueness_guarantee"</span>: <span class="val">false</span>
+}</pre>
+        <p>API Gateway validates the request body schema before the Lambda is invoked.</p>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">2</div><h3>Insert new definition row</h3></div>
+      <div class="step-body">
+        <p>Metadata Writer Lambda opens a single Aurora transaction. First write: insert into <code>semantic_field_definitions</code>.</p>
+        <pre class="code-block"><span class="kw">INSERT INTO</span> semantic_field_definitions (
+  definition_id, field_name, version, semantic_type,
+  description, time_semantics, nullability_rule,
+  uniqueness_guarantee, created_at, created_by, superseded_by
+) <span class="kw">VALUES</span> (
+  <span class="str">'&lt;new-uuid-v2&gt;'</span>,   <span class="cmt">-- generated by Lambda</span>
+  <span class="str">'event_timestamp'</span>,
+  <span class="val">2</span>,                  <span class="cmt">-- monotonically incremented per (field_name, source_dataset_id)</span>
+  <span class="str">'iso8601_date'</span>,
+  <span class="str">'ISO 8601 calendar date in UTC...'</span>,
+  <span class="str">'{"timezone":"UTC","precision":"day","format":"YYYY-MM-DD"}'</span>,
+  <span class="str">'event_did_not_occur'</span>,
+  <span class="val">false</span>,
+  <span class="fn">now()</span>,
+  <span class="str">'engineer@company.com'</span>,
+  <span class="val">NULL</span>               <span class="cmt">-- this is now the current version</span>
+)</pre>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">3</div><h3>Retire the old definition row</h3></div>
+      <div class="step-body">
+        <p>Second write (same transaction): set <code>superseded_by</code> on the version-1 row. The old row is never deleted — it is the permanent record of what was believed to be true before the correction.</p>
+        <pre class="code-block"><span class="kw">UPDATE</span> semantic_field_definitions
+<span class="kw">SET</span> superseded_by = <span class="str">'&lt;new-uuid-v2&gt;'</span>
+<span class="kw">WHERE</span> definition_id = <span class="str">'&lt;old-uuid-v1&gt;'</span></pre>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">4</div><h3>Bulk-mark bindings as stale</h3></div>
+      <div class="step-body">
+        <p>Third write (same transaction): one statement marks every dataset that was computed against the wrong definition. May touch thousands of rows; runs atomically inside the open transaction.</p>
+        <pre class="code-block"><span class="kw">UPDATE</span> dataset_field_bindings
+<span class="kw">SET</span>   is_stale = <span class="val">true</span>
+<span class="kw">WHERE</span> definition_id = <span class="str">'&lt;old-uuid-v1&gt;'</span></pre>
+        <p>Transaction commits. The DB is now consistent: new definition exists, old one is retired, every dataset that used the wrong definition is marked stale. Nothing downstream has run yet.</p>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">5</div><h3>Publish DefinitionCorrected event</h3></div>
+      <div class="step-body">
+        <p>After the transaction commits, the Lambda publishes to the EventBridge custom bus. The event is published outside the transaction — if the publish fails, retrying is safe because the definition write is idempotent against an existing <code>definition_id</code>.</p>
+        <pre class="code-block">{
+  <span class="str">"source"</span>:      <span class="str">"walktru.semantic-catalog"</span>,
+  <span class="str">"detail-type"</span>: <span class="str">"DefinitionCorrected"</span>,
+  <span class="str">"detail"</span>: {
+    <span class="str">"field_name"</span>:        <span class="str">"event_timestamp"</span>,
+    <span class="str">"old_definition_id"</span>: <span class="str">"&lt;uuid-v1&gt;"</span>,
+    <span class="str">"new_definition_id"</span>: <span class="str">"&lt;uuid-v2&gt;"</span>,
+    <span class="str">"triggered_by"</span>:     <span class="str">"engineer@company.com"</span>,
+    <span class="str">"initiated_at"</span>:     <span class="str">"2026-06-23T10:00:00Z"</span>
+  }
+}</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Phase 2 ── -->
+<div class="phase-section sec">
+  <div class="phase-title">
+    <div class="phase-num" style="background:var(--accent2);color:#0f1117;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;flex-shrink:0">2</div>
+    <div>
+      <h2>Phase 2 — Impact Assessment</h2>
+      <p>EventBridge routes the event to the DAG Traversal Lambda. Which datasets are affected, and in what order?</p>
+    </div>
+  </div>
+  <div class="steps">
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">1</div><h3>Find directly affected datasets (depth 0)</h3></div>
+      <div class="step-body">
+        <p>Query <code>dataset_field_bindings</code> for all datasets that directly reference <code>event_timestamp</code> under the old definition. This is the starting set S₀ — the initial frontier for graph traversal.</p>
+        <pre class="code-block"><span class="kw">SELECT</span> dataset_id
+<span class="kw">FROM</span>   dataset_field_bindings
+<span class="kw">WHERE</span>  definition_id = <span class="str">'&lt;old-uuid-v1&gt;'</span></pre>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">2</div><h3>BFS over dataset_lineage to find transitive dependents</h3></div>
+      <div class="step-body">
+        <p>Starting from S₀, the Lambda walks downstream through <code>dataset_lineage</code> using a recursive CTE. A billing deduplication dataset that depends on a DAU metrics dataset that depends on <code>event_timestamp</code> appears at depth 2.</p>
+        <pre class="code-block"><span class="kw">WITH RECURSIVE</span> downstream <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> downstream_dataset_id, <span class="val">1</span> <span class="kw">AS</span> depth
+  <span class="kw">FROM</span>   dataset_lineage
+  <span class="kw">WHERE</span>  upstream_dataset_id <span class="kw">IN</span> (&lt;S₀ ids&gt;)
+
+  <span class="kw">UNION ALL</span>
+
+  <span class="kw">SELECT</span> l.downstream_dataset_id, d.depth + <span class="val">1</span>
+  <span class="kw">FROM</span>   dataset_lineage l
+  <span class="kw">JOIN</span>   downstream d <span class="kw">ON</span> l.upstream_dataset_id = d.downstream_dataset_id
+)
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> downstream</pre>
+        <p>For graphs over 10k nodes, BFS is paged in application code using an ElastiCache (Redis) frontier set — but the result is identical: a flat list of <code>(dataset_id, depth)</code> pairs covering the entire affected subgraph.</p>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">3</div><h3>Compute topological order and blocking relationships</h3></div>
+      <div class="step-body">
+        <p>For each affected dataset, compute:</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:5px;margin:6px 0 8px">
+          <li style="display:flex;gap:8px"><span style="color:var(--accent2)">·</span><span><code>topological_depth</code> — its depth from the BFS above</span></li>
+          <li style="display:flex;gap:8px"><span style="color:var(--accent2)">·</span><span><code>blocked_by_task_ids</code> — task IDs of its direct upstream predecessors <em>within the affected set</em>. Datasets outside the affected subgraph are already correct and need not complete first.</span></li>
+        </ul>
+        <p>A depth-2 dataset is blocked by its depth-1 predecessors in the affected set — not by all depth-1 datasets globally.</p>
+      </div>
+    </div>
+
+    <div class="step-block">
+      <div class="step-header"><div class="step-num">4</div><h3>Write the propagation plan to the database</h3></div>
+      <div class="step-body">
+        <p>The Lambda bulk-inserts the full propagation plan:</p>
+        <p><strong style="color:var(--text)">1.</strong> One row in <code>propagation_events</code>: anchors <code>old_definition_id</code>, <code>new_definition_id</code>, sets <code>affected_dataset_count</code> and <code>status = 'in_progress'</code>.</p>
+        <p><strong style="color:var(--text)">2.</strong> One row per affected dataset in <code>propagation_tasks</code>: <code>topological_depth</code>, <code>blocked_by_task_ids</code>, <code>pipeline_type</code> copied from the <code>datasets</code> table. Status is <code>'pending'</code> for depth-0 tasks, <code>'blocked'</code> for all others.</p>
+        <p><strong style="color:var(--text)">3.</strong> Enqueues only the depth-0 tasks to SQS. All deeper tasks stay in the database as <code>blocked</code> — untouched until their upstream tasks complete.</p>
+        <p>An operator can now query <code>propagation_tasks</code> to see the full scope — e.g., 347 datasets, their depths, and their blocking relationships — before a single recomputation job has run.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Phase 3 ── -->
+<div class="phase-section sec">
+  <div class="phase-title">
+    <div class="phase-num" style="background:var(--accent4);color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;flex-shrink:0">3</div>
+    <div>
+      <h2>Phase 3 — Recomputation</h2>
+      <p>Depth-0 tasks run in parallel. Batch and streaming pipelines follow different protocols.</p>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Batch path -->
+    <div>
+      <p class="section-title" style="margin-bottom:12px">Batch datasets</p>
+      <div class="steps">
+        <div class="step-block">
+          <div class="step-header" style="background:rgba(16,185,129,0.08)"><div class="step-num" style="background:var(--accent4)">1</div><h3>Set in_progress</h3></div>
+          <div class="step-body"><p>Batch Handler sets <code>propagation_tasks.status = 'in_progress'</code>, records <code>started_at</code>.</p></div>
+        </div>
+        <div class="step-block">
+          <div class="step-header" style="background:rgba(16,185,129,0.08)"><div class="step-num" style="background:var(--accent4)">2</div><h3>Start Glue / EMR job</h3></div>
+          <div class="step-body"><p>Job parameterized with <code>dataset_id</code> and <code>new_definition_id</code>. Reads the same upstream sources but interprets <code>event_timestamp</code> as an ISO 8601 date — affecting date-range filtering, timezone handling, and aggregation logic. Rewrites materialization to <code>s3://data-platform/{tenant_id}/datasets/{dataset_id}/</code>.</p></div>
+        </div>
+        <div class="step-block">
+          <div class="step-header" style="background:rgba(16,185,129,0.08)"><div class="step-num" style="background:var(--accent4)">3</div><h3>Await EventBridge completion event</h3></div>
+          <div class="step-body"><p>The handler does not poll. The SQS visibility timeout keeps the message invisible while the job runs. Glue publishes a job-state-change event to EventBridge on success or failure, which triggers the next step.</p>
+          <p>On failure: <code>attempt_count</code> incremented; message reappears in SQS after timeout. At 3 attempts: task marked <code>failed</code>, message moved to DLQ, CloudWatch alarm fires.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Streaming path -->
+    <div>
+      <p class="section-title" style="margin-bottom:12px">Streaming datasets</p>
+      <div class="protocol-steps">
+        <div class="protocol-step">
+          <div class="proto-num" style="color:var(--accent2)">1</div>
+          <div class="proto-body"><strong>Pause</strong> — disable the Lambda event source mapping (Kinesis) or suspend the MSK consumer group. The consumer stops pulling new records. Events continue arriving in the stream; they accumulate but are not processed.</div>
+        </div>
+        <div class="protocol-step">
+          <div class="proto-num" style="color:var(--accent2)">2</div>
+          <div class="proto-body"><strong>Drain</strong> — wait for the in-flight batch to fully commit. For Kinesis: monitor <code>IteratorAgeMilliseconds</code> until it drops to zero. For MSK: consumer lag drops to zero. Interim state written to a DynamoDB control-plane table (<code>consumer_id</code>, <code>pause_timestamp</code>, <code>drain_confirmed_at</code>).</div>
+        </div>
+        <div class="protocol-step">
+          <div class="proto-num" style="color:var(--accent2)">3</div>
+          <div class="proto-body"><strong>Update</strong> — push the new semantic definition config to the consumer. In practice: update a Parameter Store value the consumer reads at startup (e.g., <code>event_timestamp.semantic_type = iso8601_date</code>), or update the Glue Schema Registry schema version.</div>
+        </div>
+        <div class="protocol-step">
+          <div class="proto-num" style="color:var(--accent2)">4</div>
+          <div class="proto-body"><strong>Replay</strong> — reset the consumer's checkpoint to <code>semantic_field_definitions.created_at</code> for the version-1 row — the moment the wrong definition first became active. Records from that point onward were processed under the wrong definition and must be reprocessed. Re-enable the event source mapping.</div>
+        </div>
+        <div class="protocol-step">
+          <div class="proto-num" style="color:var(--accent2)">5</div>
+          <div class="proto-body"><strong>Resume</strong> — consumer processes records from the replay point with the corrected semantic interpretation. It catches up to the current stream position and resumes normal real-time processing.</div>
+        </div>
+      </div>
+      <div class="step-block" style="margin-top:12px">
+        <div class="step-header"><div class="step-num" style="background:var(--accent3);color:#0f1117">!</div><h3>Why replay from definition activation time, not pause time</h3></div>
+        <div class="step-body"><p>The pause time only covers records processed since the correction was initiated. But records processed before the correction were also interpreted under the wrong definition — DAU metric aggregations may have bucketed dates incorrectly for months. Replaying from the original <code>created_at</code> ensures the entire historical window under the wrong definition is reprocessed.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Phase 4 ── -->
+<div class="phase-section sec">
+  <div class="phase-title">
+    <div class="phase-num" style="background:var(--accent5);color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;flex-shrink:0">4</div>
+    <div>
+      <h2>Phase 4 — Completion and Wave Progression</h2>
+      <p>Each completed task updates the DB and may release the next wave. No central scheduler.</p>
+    </div>
+  </div>
+  <div class="flow-note" style="max-width:none;">
+    <h3>Completion Handler — called on every task success</h3>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="step-num" style="background:var(--accent5)">1</div><span>In a single Aurora transaction: set <code>propagation_tasks.status = 'completed'</code>, <code>completed_at = now()</code>. Update <code>dataset_field_bindings</code> for this dataset: <code>definition_id = &lt;new_definition_id&gt;</code>, <code>is_stale = false</code>, <code>bound_at = now()</code>. This is the moment the dataset officially transitions from the old semantic contract to the new one. Increment <code>propagation_events.completed_dataset_count</code>.</span></div>
+      <div class="flow-step"><div class="step-num" style="background:var(--accent5)">2</div><span>If <code>completed_dataset_count = affected_dataset_count</code>: set <code>propagation_events.status = 'completed'</code>, record <code>completed_at</code>. The propagation is done.</span></div>
+      <div class="flow-step"><div class="step-num" style="background:var(--accent5)">3</div><span>Query <code>propagation_tasks</code> for any task in <code>blocked</code> status whose <code>blocked_by_task_ids</code> are now all <code>completed</code>. For each: set status to <code>pending</code>, enqueue to the appropriate SQS queue (batch or streaming). This is "wave progression" — no task is ever enqueued until all its upstream dependencies within the affected subgraph have completed.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Partial Inconsistency ── -->
+<div class="phase-section sec">
+  <div class="phase-title">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">⚡</div>
+    <div>
+      <h2>Partial Inconsistency During Propagation</h2>
+      <p>While propagation is in progress, some datasets are on the new definition and some are not. This window is unavoidable — and managed explicitly.</p>
+    </div>
+  </div>
+  <div class="mode-grid">
+    <div class="mode-card">
+      <h4 style="color:var(--accent4)">Topological guarantee</h4>
+      <p>Recomputation order ensures a downstream dataset is never recomputed before its upstream dependencies. At any point during propagation, a dataset bound to the new definition is guaranteed to have been computed from upstream datasets also on the new definition (or outside the affected subgraph). A depth-2 dataset is never on the new definition while its depth-1 upstream is still on the old one.</p>
+    </div>
+    <div class="mode-card">
+      <h4 style="color:var(--accent3)">Warning mode <span style="font-weight:400;color:var(--muted)">(default)</span></h4>
+      <p>Queries against stale datasets succeed but return metadata indicating the dataset was computed against an older semantic definition. Analysts see results but are warned they may not reflect corrected <code>event_timestamp</code> semantics. Appropriate for most analytical workloads.</p>
+    </div>
+    <div class="mode-card">
+      <h4 style="color:var(--accent5)">Blocking mode <span style="font-weight:400;color:var(--muted)">(opt-in)</span></h4>
+      <p>Queries against stale datasets are rejected until recomputation completes. Appropriate for billing or compliance datasets where reading a stale version is worse than reading nothing. Configurable per tenant via the <code>is_stale</code> flag visible to the query layer.</p>
+    </div>
+    <div class="mode-card">
+      <h4 style="color:var(--accent2)">No phantom consistency</h4>
+      <p><code>propagation_events.status</code> stays <code>in_progress</code> until every task completes. The Status API (<code>GET /propagations/{event_id}</code>) reflects real-time progress as a rolling count of <code>completed_dataset_count / affected_dataset_count</code>. The system does not pretend propagation is complete until it is.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Rollback ── -->
+<div class="phase-section sec">
+  <div class="phase-title">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">↩</div>
+    <div>
+      <h2>Rollback</h2>
+      <p>Rollback is not a special operation — it is a new correction in the reverse direction.</p>
+    </div>
+  </div>
+  <div class="flow-note" style="max-width:none;">
+    <h3>Detecting the need to roll back</h3>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="step-num" style="background:var(--accent3);color:#0f1117">!</div><span>CloudWatch alarm on DLQ message count &gt; 0 (task failing repeatedly)</span></div>
+      <div class="flow-step"><div class="step-num" style="background:var(--accent3);color:#0f1117">!</div><span>CloudWatch alarm on <code>PropagationLagSeconds</code> exceeding SLA threshold</span></div>
+      <div class="flow-step"><div class="step-num" style="background:var(--accent3);color:#0f1117">!</div><span>Manual call to <code>GET /propagations/{event_id}</code> showing stuck tasks or tenants reporting unexpected results</span></div>
+    </div>
+  </div>
+  <div class="flow-note" style="max-width:none; margin-top:16px;">
+    <h3>Executing rollback</h3>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="step-num">1</div><span>Engineer calls <code>POST /definitions/event_timestamp/correct</code> again with the old definition's semantics. Metadata Writer inserts v3 (semantically identical to v1), sets <code>superseded_by</code> on v2, bulk-marks bindings to v2 as stale, and creates a new <code>propagation_events</code> row with <code>rollback_event_id</code> pointing to the original event.</span></div>
+      <div class="flow-step"><div class="step-num">2</div><span>The same EventBridge → DAG Traversal → SQS → Task Handlers → Completion Handler pipeline runs. Datasets recompute against the prior definition (v3 / restored v1 semantics).</span></div>
+      <div class="flow-step"><div class="step-num">3</div><span>Physical data was never modified — Glue and streaming jobs rewrote materialized outputs to S3, but the original pre-correction outputs are not deleted until new outputs are verified. Because <code>semantic_field_definitions</code> rows are immutable, v1 still exists in full detail. Rollback is a metadata pointer swap, not data recovery.</span></div>
+      <div class="flow-step"><div class="step-num">4</div><span><strong style="color:var(--text)">Partial rollback</strong> (single tenant): scope the <code>UPDATE dataset_field_bindings SET is_stale=true</code> to a specific <code>tenant_id</code> in the Metadata Writer. The DAG Traversal Lambda creates tasks only for that tenant's affected datasets. Other tenants' propagation continues uninterrupted.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tradeoffs ── -->
+<div class="phase-section sec">
+  <div class="phase-title">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0">⚖</div>
+    <div>
+      <h2>Tradeoffs</h2>
+      <p>Three design choices where the alternative was viable — here's why each call was made.</p>
+    </div>
+  </div>
+  <div class="tradeoff-grid">
+
+    <div class="tradeoff-card">
+      <div class="tradeoff-header">
+        <h4>Correctness vs cost</h4>
+        <p>Eager full recomputation vs lazy on-read re-evaluation</p>
+      </div>
+      <div class="tradeoff-body">
+        <div class="tradeoff-row">
+          <div class="tradeoff-side chosen"><strong>Chosen — eager</strong>Every affected dataset is recomputed immediately. The propagation has a clear completion state. Operators know when the system is fully consistent. Rollback scope is well-defined.</div>
+          <div class="tradeoff-vs">vs</div>
+          <div class="tradeoff-side alt"><strong>Lazy (rejected)</strong>Stale datasets are only recomputed when a tenant queries them. Saves compute cost. But propagation has no completion state, rollback is harder (you don't know what's been updated), and billing datasets silently serve stale data.</div>
+        </div>
+        <p style="font-size:0.77rem;color:var(--muted);margin-top:8px;">For a platform where <code>event_timestamp</code> feeds billing deduplication and identity joins, the risk of silent staleness outweighs the compute cost.</p>
+      </div>
+    </div>
+
+    <div class="tradeoff-card">
+      <div class="tradeoff-header">
+        <h4>Versioned definitions vs in-place updates</h4>
+        <p>Append-only rows vs overwriting the definition row</p>
+      </div>
+      <div class="tradeoff-body">
+        <div class="tradeoff-row">
+          <div class="tradeoff-side chosen"><strong>Chosen — immutable versioning</strong>Each correction adds a new row. Old rows are never modified. You can always ask "what definition was this dataset computed against?" Rollback is a metadata pointer swap — no data recovery needed.</div>
+          <div class="tradeoff-vs">vs</div>
+          <div class="tradeoff-side alt"><strong>In-place update (rejected)</strong>Simpler to implement. But eliminates the ability to audit past definitions. Rollback becomes destructive — you've overwritten the thing you'd need to restore.</div>
+        </div>
+        <p style="font-size:0.77rem;color:var(--muted);margin-top:8px;">Cost: one row per definition version (trivial storage), slightly more complex "get current definition" query. Both trivially acceptable.</p>
+      </div>
+    </div>
+
+    <div class="tradeoff-card">
+      <div class="tradeoff-header">
+        <h4>Up-front task set vs dynamic task spawning</h4>
+        <p>All tasks inserted at creation time vs children spawned at completion</p>
+      </div>
+      <div class="tradeoff-body">
+        <div class="tradeoff-row">
+          <div class="tradeoff-side chosen"><strong>Chosen — up front</strong>Full scope is visible before any task runs. Operators can estimate total time and audit impact. Easy to catch DAG cycles or unexpectedly large impact sets before recomputation starts. Complete task list simplifies rollback.</div>
+          <div class="tradeoff-vs">vs</div>
+          <div class="tradeoff-side alt"><strong>Dynamic spawning (rejected)</strong>Simpler to implement — a task just creates its children on completion. But scope is opaque until propagation is halfway done, with no way to estimate how long it will take.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+<script src="assets/nav.js"></script>
+</body>
+</html>

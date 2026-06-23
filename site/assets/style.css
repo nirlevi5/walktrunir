@@ -1,0 +1,160 @@
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #232635;
+  --border: #2e3146;
+  --accent: #6366f1;
+  --accent2: #22d3ee;
+  --accent3: #f59e0b;
+  --accent4: #10b981;
+  --accent5: #f43f5e;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --pk: #fbbf24;
+  --fk: #60a5fa;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+/* ── Nav ── */
+nav.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  height: 48px;
+  gap: 0;
+}
+
+nav.site-nav .nav-brand {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-right: 28px;
+  text-decoration: none;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+nav.site-nav a:not(.nav-brand) {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 0 14px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+nav.site-nav a:not(.nav-brand):hover { color: var(--text); }
+
+nav.site-nav a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Page content ── */
+.page-content {
+  padding: 40px 24px;
+}
+
+/* ── Typography ── */
+h1 {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 48px;
+  font-size: 0.9rem;
+}
+
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.pk { background: rgba(251,191,36,0.15); color: var(--pk); border: 1px solid rgba(251,191,36,0.3); }
+.fk { background: rgba(96,165,250,0.15); color: var(--fk); border: 1px solid rgba(96,165,250,0.3); }
+
+code {
+  font-family: 'Consolas', 'Fira Code', monospace;
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--accent2);
+}
+
+/* ── Flow note (shared between doc1 + doc3) ── */
+.flow-note {
+  max-width: 1100px;
+  margin: 32px auto 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.flow-note h3 {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.flow-steps { display: flex; flex-direction: column; gap: 8px; }
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}

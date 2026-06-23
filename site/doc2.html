@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doc 2 — AWS Architecture</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .arch-container { max-width: 1100px; margin: 0 auto 56px; }
+    svg#arch { width: 100%; height: auto; overflow: visible; }
+
+    .comp-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px;
+    }
+    .comp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .comp-header { padding: 13px 18px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+    .comp-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; font-weight: 800; }
+    .comp-name { font-family: 'Consolas','Fira Code',monospace; font-size: 0.88rem; font-weight: 600; }
+    .comp-body { padding: 14px 18px; font-size: 0.81rem; color: var(--muted); line-height: 1.65; }
+    .comp-body p { margin-bottom: 9px; }
+    .comp-body p:last-child { margin-bottom: 0; }
+    .comp-body ul { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
+    .comp-body li { display: flex; align-items: flex-start; gap: 8px; }
+    .comp-body li::before { content: '·'; font-weight: 900; flex-shrink: 0; color: var(--accent2); }
+    .why-box { margin-top: 10px; padding: 9px 13px; background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; font-size: 0.77rem; color: var(--muted); line-height: 1.55; }
+    .why-box strong { color: var(--accent); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; }
+
+    .table-wrap { max-width: 1100px; margin: 0 auto; overflow-x: auto; }
+    table.decisions { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 0.81rem; }
+    table.decisions thead tr { background: var(--surface2); }
+    table.decisions thead th { padding: 9px 14px; text-align: left; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    table.decisions tbody tr { border-top: 1px solid var(--border); }
+    table.decisions tbody tr:hover { background: rgba(255,255,255,0.02); }
+    table.decisions td { padding: 9px 14px; vertical-align: top; color: var(--muted); line-height: 1.5; }
+    table.decisions td:first-child { color: var(--text); font-weight: 600; white-space: nowrap; }
+    table.decisions td:nth-child(2) { color: var(--accent2); font-family: 'Consolas','Fira Code',monospace; font-size: 0.77rem; }
+    table.decisions td:nth-child(3) { color: var(--muted); font-size: 0.77rem; }
+
+    table.mapping { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 0.79rem; }
+    table.mapping thead tr { background: var(--surface2); }
+    table.mapping thead th { padding: 8px 14px; text-align: left; font-size: 0.67rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    table.mapping tbody tr { border-top: 1px solid var(--border); }
+    table.mapping tbody tr:hover { background: rgba(255,255,255,0.02); }
+    table.mapping td { padding: 8px 14px; vertical-align: top; color: var(--muted); line-height: 1.45; font-size: 0.77rem; }
+    table.mapping td:first-child { color: var(--accent); font-family: 'Consolas','Fira Code',monospace; white-space: nowrap; }
+
+    .iso-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+    .iso-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+    .iso-card h4 { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .iso-card p, .iso-card li { font-size: 0.79rem; color: var(--muted); line-height: 1.6; }
+    .iso-card ul { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+    .iso-card li { display: flex; align-items: flex-start; gap: 8px; }
+    .iso-card li::before { content: '→'; color: var(--accent2); flex-shrink: 0; font-size: 0.73rem; margin-top: 2px; }
+    .layer-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.67rem; font-weight: 700; letter-spacing: 0.05em; }
+
+    .sec { margin-bottom: 48px; }
+  </style>
+</head>
+<body>
+<div class="page-content">
+
+<h1>Document 2 — AWS Architecture</h1>
+<p class="subtitle">Services for semantic propagation · storage · orchestration · tenant isolation</p>
+
+<!-- ── Architecture Diagram ── -->
+<div class="arch-container sec">
+  <p class="section-title">Architecture Overview</p>
+  <svg id="arch" viewBox="0 0 820 770" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arr"        markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/></marker>
+      <marker id="arr-purple" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#6366f1"/></marker>
+      <marker id="arr-amber"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#f59e0b"/></marker>
+    </defs>
+
+    <!-- Engineer -->
+    <rect x="130" y="10" width="180" height="32" rx="6" fill="#232635" stroke="#2e3146" stroke-width="1.5"/>
+    <text x="220" y="31" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif" fill="#e2e8f0" text-anchor="middle">Engineer</text>
+    <line x1="220" y1="42" x2="220" y2="74" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="226" y="62" font-size="8" fill="#94a3b8" font-family="sans-serif">POST /definitions/{field_name}/correct</text>
+
+    <!-- API Gateway -->
+    <rect x="130" y="74" width="180" height="32" rx="6" fill="#232635" stroke="#2e3146" stroke-width="1.5"/>
+    <text x="220" y="95" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif" fill="#e2e8f0" text-anchor="middle">API Gateway</text>
+    <line x1="220" y1="106" x2="220" y2="140" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="226" y="126" font-size="8" fill="#94a3b8" font-family="sans-serif">validate schema</text>
+
+    <!-- Lambda: Metadata Writer -->
+    <rect x="88" y="140" width="264" height="34" rx="6" fill="#22d3ee" opacity="0.85"/>
+    <text x="220" y="162" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif" fill="#0f1117" text-anchor="middle">Lambda: Metadata Writer</text>
+
+    <!-- Metadata Writer → Aurora 1 -->
+    <line x1="352" y1="157" x2="452" y2="157" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-purple)"/>
+    <rect x="452" y="128" width="358" height="90" rx="8" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="462" y="146" font-size="9.5" font-weight="700" font-family="Consolas,monospace" fill="#6366f1">Aurora PostgreSQL (Serverless v2)</text>
+    <text x="462" y="162" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">+ semantic_field_definitions  (new version row)</text>
+    <text x="462" y="178" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  semantic_field_definitions  (set superseded_by)</text>
+    <text x="462" y="194" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  dataset_field_bindings      (bulk is_stale=true)</text>
+    <text x="462" y="210" font-size="8" font-family="sans-serif" fill="#6366f1" font-style="italic">single atomic transaction</text>
+
+    <line x1="220" y1="174" x2="220" y2="256" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="226" y="218" font-size="8" fill="#94a3b8" font-family="sans-serif">publish DefinitionCorrected event</text>
+    <text x="226" y="230" font-size="8" fill="#94a3b8" font-family="sans-serif">(after transaction commit)</text>
+
+    <!-- EventBridge -->
+    <rect x="130" y="256" width="180" height="32" rx="6" fill="#10b981" opacity="0.9"/>
+    <text x="220" y="277" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif" fill="white" text-anchor="middle">EventBridge (custom bus)</text>
+    <line x1="220" y1="288" x2="220" y2="322" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Lambda: DAG Traversal -->
+    <rect x="88" y="322" width="264" height="34" rx="6" fill="#22d3ee" opacity="0.85"/>
+    <text x="220" y="344" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif" fill="#0f1117" text-anchor="middle">Lambda: DAG Traversal</text>
+
+    <!-- DAG Traversal → Aurora 2 -->
+    <line x1="352" y1="339" x2="452" y2="339" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-purple)"/>
+    <rect x="452" y="310" width="358" height="90" rx="8" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="462" y="328" font-size="9.5" font-weight="700" font-family="Consolas,monospace" fill="#6366f1">Aurora PostgreSQL</text>
+    <text x="462" y="344" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  dataset_lineage       (BFS / recursive CTE)</text>
+    <text x="462" y="360" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">+ propagation_events   (insert event row)</text>
+    <text x="462" y="376" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">+ propagation_tasks    (bulk insert all tasks)</text>
+    <text x="462" y="392" font-size="8" font-family="sans-serif" fill="#6366f1" font-style="italic">enqueue only depth-0 tasks to SQS</text>
+
+    <!-- split to SQS -->
+    <line x1="220" y1="356" x2="220" y2="400" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="95"  y1="400" x2="345" y2="400" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="95"  y1="400" x2="95"  y2="424" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="345" y1="400" x2="345" y2="424" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- SQS Batch -->
+    <rect x="10" y="424" width="172" height="34" rx="6" fill="#f59e0b" opacity="0.85"/>
+    <text x="96" y="437" font-size="9.5" font-weight="700" font-family="Segoe UI,sans-serif" fill="#0f1117" text-anchor="middle">SQS: Batch Task Queue</text>
+    <text x="96" y="451" font-size="7.5" font-family="sans-serif" fill="#0f1117" text-anchor="middle">15 min visibility · DLQ after 3 fails</text>
+
+    <!-- SQS Streaming -->
+    <rect x="258" y="424" width="174" height="34" rx="6" fill="#f59e0b" opacity="0.85"/>
+    <text x="345" y="437" font-size="9.5" font-weight="700" font-family="Segoe UI,sans-serif" fill="#0f1117" text-anchor="middle">SQS: Streaming Task Queue</text>
+    <text x="345" y="451" font-size="7.5" font-family="sans-serif" fill="#0f1117" text-anchor="middle">30 min visibility · DLQ after 3 fails</text>
+
+    <line x1="96"  y1="458" x2="96"  y2="492" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="345" y1="458" x2="345" y2="492" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Lambda Batch Handler -->
+    <rect x="10" y="492" width="172" height="32" rx="6" fill="#22d3ee" opacity="0.85"/>
+    <text x="96" y="513" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif" fill="#0f1117" text-anchor="middle">Lambda: Batch Handler</text>
+
+    <!-- Lambda Streaming Handler -->
+    <rect x="258" y="492" width="174" height="32" rx="6" fill="#22d3ee" opacity="0.85"/>
+    <text x="345" y="513" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif" fill="#0f1117" text-anchor="middle">Lambda: Streaming Handler</text>
+
+    <line x1="96"  y1="524" x2="96"  y2="558" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <line x1="345" y1="524" x2="345" y2="558" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+    <!-- Glue/EMR -->
+    <rect x="10" y="558" width="172" height="40" rx="6" fill="#1a1d27" stroke="#10b981" stroke-width="1.5"/>
+    <text x="96" y="574" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif" fill="#10b981" text-anchor="middle">Glue / EMR Serverless</text>
+    <text x="96" y="589" font-size="8" font-family="sans-serif" fill="#94a3b8" text-anchor="middle">recompute dataset</text>
+
+    <!-- Streaming Control Plane -->
+    <rect x="258" y="558" width="174" height="40" rx="6" fill="#1a1d27" stroke="#10b981" stroke-width="1.5"/>
+    <text x="345" y="574" font-size="10" font-weight="700" font-family="Segoe UI,sans-serif" fill="#10b981" text-anchor="middle">Streaming Control Plane</text>
+    <text x="345" y="589" font-size="8" font-family="sans-serif" fill="#94a3b8" text-anchor="middle">pause → drain → replay → resume</text>
+
+    <!-- join to Completion Handler -->
+    <line x1="96"  y1="598" x2="96"  y2="636" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="345" y1="598" x2="345" y2="636" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="96"  y1="636" x2="220" y2="636" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="345" y1="636" x2="220" y2="636" stroke="#94a3b8" stroke-width="1.5"/>
+    <line x1="220" y1="636" x2="220" y2="660" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="226" y="652" font-size="8" fill="#94a3b8" font-family="sans-serif">on task completion</text>
+
+    <!-- Lambda: Completion Handler -->
+    <rect x="88" y="660" width="264" height="34" rx="6" fill="#f43f5e" opacity="0.9"/>
+    <text x="220" y="682" font-size="11" font-weight="700" font-family="Segoe UI,sans-serif" fill="white" text-anchor="middle">Lambda: Completion Handler</text>
+
+    <!-- Completion → Aurora 3 -->
+    <line x1="352" y1="677" x2="452" y2="677" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-purple)"/>
+    <rect x="452" y="650" width="358" height="78" rx="8" fill="#1a1d27" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="462" y="667" font-size="9.5" font-weight="700" font-family="Consolas,monospace" fill="#6366f1">Aurora PostgreSQL</text>
+    <text x="462" y="683" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  propagation_tasks      (mark completed)</text>
+    <text x="462" y="699" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  dataset_field_bindings (update to new def_id)</text>
+    <text x="462" y="715" font-size="9" font-family="Consolas,monospace" fill="#94a3b8">  propagation_events     (incr. completed_count)</text>
+
+    <!-- Completion → next wave -->
+    <line x1="220" y1="694" x2="220" y2="730" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="226" y="716" font-size="8" fill="#94a3b8" font-family="sans-serif">check blocked_by_task_ids — release unblocked</text>
+
+    <!-- SQS loopback box -->
+    <rect x="130" y="730" width="180" height="30" rx="6" fill="#f59e0b" opacity="0.6"/>
+    <text x="220" y="750" font-size="9.5" font-weight="700" font-family="Segoe UI,sans-serif" fill="#0f1117" text-anchor="middle">SQS — enqueue next wave</text>
+
+    <!-- loopback arrow -->
+    <path d="M 130,745 C 56,745 56,441 10,441" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arr-amber)"/>
+  </svg>
+</div>
+
+<!-- ── Component Breakdown ── -->
+<div class="sec">
+  <div class="arch-container" style="margin-bottom:20px;">
+    <p class="section-title">Component Breakdown</p>
+  </div>
+  <div class="comp-grid">
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(99,102,241,0.15);color:#6366f1">DB</div>
+        <div class="comp-name">Aurora PostgreSQL (Serverless v2)</div>
+      </div>
+      <div class="comp-body">
+        <p>Single source of truth for all five metadata tables. One writer instance + one read replica; DAG traversal and status-check reads go to the replica. Deployed in a private VPC subnet; Lambdas connect via VPC config. Credentials in Secrets Manager with automatic rotation.</p>
+        <div class="why-box">
+          <strong>Why PostgreSQL, not DynamoDB:</strong> the bulk staleness sweep must be atomic with the definition insert — PostgreSQL gives this in one transaction; DynamoDB transactions cap at 100 items. <code>time_semantics</code> is JSONB, natively queryable. Lineage traversal is a recursive CTE; DynamoDB would require BFS in application code with N round-trips. Serverless v2 scales ACUs to zero when propagation is idle.
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(34,211,238,0.15);color:#22d3ee">λ</div>
+        <div class="comp-name">API Gateway + Lambda: Metadata Writer</div>
+      </div>
+      <div class="comp-body">
+        <p>Entry point for definition corrections. API Gateway validates the request schema before the Lambda is invoked. The Lambda wraps all three writes — insert new definition, set <code>superseded_by</code>, bulk-update <code>is_stale</code> — in a single Aurora transaction. EventBridge publish happens after commit and is safe to retry (idempotent against an existing <code>definition_id</code>).</p>
+        <div class="why-box">
+          <strong>Why one Lambda for all three writes:</strong> splitting them across services creates a window where the new definition exists but <code>superseded_by</code> is still null — inconsistent staleness detection. Atomicity requires a single transaction.
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(16,185,129,0.15);color:#10b981">EB</div>
+        <div class="comp-name">EventBridge (Custom Bus)</div>
+      </div>
+      <div class="comp-body">
+        <p>Decouples the Metadata Writer from all downstream consumers. Rules: <code>DefinitionCorrected</code> → DAG Traversal Lambda (always) and <code>DefinitionCorrected</code> → CloudWatch Logs (audit trail). Adding new consumers requires no changes to the publisher.</p>
+        <div class="why-box">
+          <strong>Why EventBridge over SNS:</strong> built-in event replay. If DAG Traversal fails, you can replay from the archive without re-running the correction. SNS has weaker filtering and no replay.
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(34,211,238,0.15);color:#22d3ee">λ</div>
+        <div class="comp-name">Lambda: DAG Traversal</div>
+      </div>
+      <div class="comp-body">
+        <p>Responds to <code>DefinitionCorrected</code>. Finds all affected datasets via BFS over <code>dataset_lineage</code> using a PostgreSQL recursive CTE. Computes <code>topological_depth</code> and <code>blocked_by_task_ids</code> for each node. Bulk-inserts all <code>propagation_tasks</code> rows and enqueues only depth-0 tasks to SQS.</p>
+        <p>For graphs over 10k nodes, BFS is paged in application code with an ElastiCache (Redis) frontier set to avoid reloading visited nodes per iteration.</p>
+        <div class="why-box">
+          <strong>Why all tasks up front:</strong> the full scope is visible before any work starts. Operators can query <code>propagation_tasks</code> immediately. Dynamic task creation makes scope invisible until propagation is halfway done.
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">Q</div>
+        <div class="comp-name">SQS: Batch + Streaming Task Queues</div>
+      </div>
+      <div class="comp-body">
+        <p>Two separate queues because batch and streaming handlers have different timeouts, retry characteristics, and error semantics. Message attributes: <code>tenant_id</code>, <code>task_id</code>, <code>event_id</code>, <code>topological_depth</code>.</p>
+        <ul>
+          <li>Batch: 15-minute visibility timeout (Glue job startup + execution)</li>
+          <li>Streaming: 30-minute visibility timeout (drain can be slow)</li>
+          <li>DLQ fires CloudWatch alarm after 3 failed delivery attempts</li>
+        </ul>
+        <div class="why-box">
+          <strong>Why SQS, not Step Functions:</strong> the dependency graph is dynamic — varies per correction and per tenant. Step Functions requires the state machine defined at creation time. At 5,000 datasets with multiple state transitions per task, Step Functions cost is materially higher than SQS at $0.40/million messages.
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(16,185,129,0.15);color:#10b981">G</div>
+        <div class="comp-name">Lambda: Batch Handler + Glue / EMR Serverless</div>
+      </div>
+      <div class="comp-body">
+        <p>Batch Handler sets task status to <code>in_progress</code>, starts a Glue (or EMR Serverless) job parameterized with <code>dataset_id</code> and <code>new_definition_id</code>, then waits for the EventBridge job-state-change event — not a blocking poll. On failure: increments <code>attempt_count</code>; message reappears in SQS up to threshold; then DLQ.</p>
+        <div class="why-box">
+          <strong>Glue vs EMR Serverless:</strong> Glue is the default — no cluster management, pay-per-DPU-second, native catalog integration. EMR Serverless when the team owns PySpark job code. Both publish completion to EventBridge, so handler code is identical.
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(34,211,238,0.15);color:#22d3ee">λ</div>
+        <div class="comp-name">Lambda: Streaming Task Handler</div>
+      </div>
+      <div class="comp-body">
+        <p>Most operationally sensitive path. Executes a five-step protocol per streaming dataset:</p>
+        <ul>
+          <li><strong style="color:var(--text)">Pause</strong> — disable Lambda event source mapping or suspend MSK consumer group</li>
+          <li><strong style="color:var(--text)">Drain</strong> — wait for <code>IteratorAgeMilliseconds</code> → 0 (Kinesis) or MSK consumer lag → 0</li>
+          <li><strong style="color:var(--text)">Update</strong> — push new definition config to Parameter Store or Glue Schema Registry</li>
+          <li><strong style="color:var(--text)">Replay</strong> — reset checkpoint to <code>semantic_field_definitions.created_at</code> of the old version; re-enable event source mapping</li>
+          <li><strong style="color:var(--text)">Resume</strong> — consumer reprocesses from replay point under correct semantics</li>
+        </ul>
+        <p style="margin-top:8px;">Interim state stored in a separate DynamoDB table — lightweight, ephemeral control-plane state that doesn't need Aurora's relational power.</p>
+      </div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-header">
+        <div class="comp-icon" style="background:rgba(244,63,94,0.15);color:#f43f5e">✓</div>
+        <div class="comp-name">Lambda: Completion Handler</div>
+      </div>
+      <div class="comp-body">
+        <p>Called by both handlers on task success. In a single Aurora transaction: marks task <code>completed</code>, updates <code>dataset_field_bindings</code> to the new definition (<code>is_stale=false</code>), increments <code>propagation_events.completed_dataset_count</code>, and closes the event if all tasks are done.</p>
+        <p>Then queries for tasks whose <code>blocked_by_task_ids</code> are now all <code>completed</code> — enqueues those to the appropriate SQS queue. Wave progression is driven entirely by this DB check; no central scheduler.</p>
+        <div class="why-box">
+          <strong>Why update bindings here, not in the compute job:</strong> the compute job rewrites data but shouldn't own the metadata contract. A single writer keeps the <code>is_stale</code> transition atomic and consistent across all tenants.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Data Model Mapping ── -->
+<div class="sec">
+  <div class="arch-container" style="margin-bottom:20px;">
+    <p class="section-title">How the Architecture Maps to the Data Model</p>
+  </div>
+  <div class="table-wrap">
+    <table class="mapping">
+      <thead><tr><th>Table</th><th>Written by</th><th>Read by</th></tr></thead>
+      <tbody>
+        <tr><td>semantic_field_definitions</td><td>Metadata Writer Lambda</td><td>DAG Traversal Lambda, Status API</td></tr>
+        <tr><td>dataset_field_bindings</td><td>Metadata Writer (stale sweep), Completion Handler (bind update)</td><td>DAG Traversal Lambda, Status API</td></tr>
+        <tr><td>dataset_lineage</td><td>External pipeline registration (not part of this flow)</td><td>DAG Traversal Lambda</td></tr>
+        <tr><td>propagation_events</td><td>DAG Traversal Lambda, Completion Handler</td><td>Status API, CloudWatch dashboards</td></tr>
+        <tr><td>propagation_tasks</td><td>DAG Traversal Lambda</td><td>Completion Handler, Task Handlers, Status API</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Tenant Isolation ── -->
+<div class="sec">
+  <div class="arch-container" style="margin-bottom:20px;">
+    <p class="section-title">Tenant Isolation</p>
+  </div>
+  <div class="iso-grid">
+    <div class="iso-card">
+      <h4><span class="layer-pill" style="background:rgba(99,102,241,0.15);color:#6366f1">Data layer</span></h4>
+      <ul>
+        <li>Every row in all five tables carries <code>tenant_id</code></li>
+        <li>Aurora row-level security policies enforce cross-tenant read prevention (<code>SET app.current_tenant_id</code> at connection time via Lambda middleware)</li>
+      </ul>
+    </div>
+    <div class="iso-card">
+      <h4><span class="layer-pill" style="background:rgba(16,185,129,0.15);color:#10b981">Compute layer</span></h4>
+      <ul>
+        <li>Glue jobs and EMR runs parameterized with <code>tenant_id</code>; write to <code>s3://data-platform/{tenant_id}/datasets/{dataset_id}/</code></li>
+        <li>IAM execution roles scoped to <code>s3:GetObject</code> / <code>s3:PutObject</code> on the tenant's S3 prefix only</li>
+      </ul>
+    </div>
+    <div class="iso-card">
+      <h4><span class="layer-pill" style="background:rgba(245,158,11,0.15);color:#f59e0b">Queue layer</span></h4>
+      <ul>
+        <li>Shared queue initially; <code>tenant_id</code> as message attribute with per-tenant Lambda concurrency limits (e.g., 40 executions)</li>
+        <li>Concurrency budget stored in Systems Manager Parameter Store and configurable per tenant</li>
+        <li>Per-tenant dedicated queues available as an upgrade path for hard SLA requirements</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ── Rollback ── -->
+<div class="sec">
+  <div class="arch-container" style="margin-bottom:20px;">
+    <p class="section-title">Rollback</p>
+  </div>
+  <div class="flow-note" style="max-width:1100px;">
+    <h3>Rollback is a reverse propagation — no special-casing required</h3>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="step-num">1</div><span>Engineer calls <code>POST /definitions/event_timestamp/correct</code> with the old definition's semantics. Metadata Writer inserts a new version row (v3, semantically identical to v1), sets <code>superseded_by</code> on v2, bulk-marks all bindings to v2 as stale, and creates a new <code>propagation_events</code> row with <code>rollback_event_id</code> pointing to the original event.</span></div>
+      <div class="flow-step"><div class="step-num">2</div><span>The same EventBridge → DAG Traversal → SQS → Task Handlers → Completion Handler pipeline runs. Datasets recompute against the prior definition.</span></div>
+      <div class="flow-step"><div class="step-num">3</div><span>Works because <code>semantic_field_definitions</code> rows are immutable — v1 still exists intact with its full definition. Physical data was never changed during the original correction. Rollback is a metadata pointer swap, not a data recovery operation. Partial rollback (single tenant) is supported by scoping the staleness sweep and task creation to one <code>tenant_id</code>.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Observability ── -->
+<div class="sec">
+  <div class="arch-container" style="margin-bottom:20px;">
+    <p class="section-title">Observability</p>
+  </div>
+  <div class="iso-grid">
+    <div class="iso-card">
+      <h4>CloudWatch Custom Metrics</h4>
+      <ul>
+        <li><code>PropagationTasksCompleted</code> — per <code>event_id</code>, per <code>tenant_id</code></li>
+        <li><code>PropagationTasksFailed</code> — per <code>event_id</code>, per <code>tenant_id</code></li>
+        <li><code>PropagationLagSeconds</code> — <code>initiated_at</code> to last task completion</li>
+        <li><code>StreamingDrainDurationSeconds</code> — detect stuck drains</li>
+      </ul>
+    </div>
+    <div class="iso-card">
+      <h4>CloudWatch Alarms</h4>
+      <ul>
+        <li>DLQ message count &gt; 0 → PagerDuty/SNS (stuck or repeatedly-failing task)</li>
+        <li><code>PropagationLagSeconds</code> &gt; threshold → behind SLA warning</li>
+        <li>Aurora writer CPU &gt; 80% → scale up alert</li>
+      </ul>
+    </div>
+    <div class="iso-card">
+      <h4>Status API + Audit Trail</h4>
+      <ul>
+        <li><code>GET /propagations/{event_id}</code> — returns overall progress, per-dataset task status, and error messages; queries <code>propagation_events</code> and <code>propagation_tasks</code></li>
+        <li>All <code>DefinitionCorrected</code> events archived to CloudWatch Logs and optionally S3 via Firehose — full audit log queryable without touching the operational database</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ── Design Decisions ── -->
+<div class="sec">
+  <div class="arch-container" style="margin-bottom:20px;">
+    <p class="section-title">Key Design Decisions</p>
+  </div>
+  <div class="table-wrap">
+    <table class="decisions">
+      <thead><tr><th>Decision</th><th>Choice</th><th>Alternative</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Metadata store</td><td>Aurora PostgreSQL Serverless v2</td><td>DynamoDB</td><td>Atomic multi-table transactions, JSONB, recursive CTEs for BFS; DynamoDB capped at 100-item transactions</td></tr>
+        <tr><td>Event routing</td><td>EventBridge custom bus</td><td>SNS, direct Lambda invoke</td><td>Decoupling, built-in event replay, easy consumer fan-out without touching the publisher</td></tr>
+        <tr><td>Task orchestration</td><td>SQS + Lambda</td><td>Step Functions</td><td>Dynamic graph cannot be expressed in a static state machine; lower cost at scale; Completion Handler implements conditional fan-out via DB check</td></tr>
+        <tr><td>Batch recomputation</td><td>Glue / EMR Serverless</td><td>Self-managed Spark on EC2</td><td>No cluster management, pay-per-use, EventBridge completion events; identical handler code regardless of engine</td></tr>
+        <tr><td>Streaming control</td><td>Event source mapping pause + replay</td><td>Blue/green consumer swap</td><td>Simpler; avoids running two consumer versions simultaneously; replay covers the full historical window under the wrong definition</td></tr>
+        <tr><td>Tenant isolation</td><td>Shared queue + per-tenant concurrency limits</td><td>Per-tenant SQS queues</td><td>Lower infra overhead initially; per-tenant queues are a supported upgrade path</td></tr>
+        <tr><td>Task set creation</td><td>Up front at event creation</td><td>Dynamic on task completion</td><td>Full scope visible immediately; operators can audit before execution begins; simplifies rollback</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+<script src="assets/nav.js"></script>
+</body>
+</html>
