@@ -1,6 +1,7 @@
 (function () {
   const MIN_SCALE = 0.25;
   const MAX_SCALE = 4;
+  const MOBILE_QUERY = '(max-width: 700px)';
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -62,9 +63,15 @@
       scale = Math.min(1, availableWidth / natural.width);
       translateX = 0;
       translateY = 0;
+      const fittedHeight = natural.height * scale;
+      const viewportCap = window.matchMedia(MOBILE_QUERY).matches
+        ? Math.max(260, window.innerHeight * 0.62)
+        : Infinity;
+      const containerHeight = Math.min(fittedHeight, viewportCap);
       svg.style.width = `${natural.width}px`;
       svg.style.height = `${natural.height}px`;
-      container.style.minHeight = `${Math.max(260, natural.height * scale)}px`;
+      container.style.height = `${Math.max(260, containerHeight)}px`;
+      container.style.minHeight = '0';
       container.classList.add('diagram-zoom-ready');
       applyTransform();
     }
