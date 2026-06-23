@@ -45,9 +45,34 @@ nav.site-nav .nav-brand {
   text-decoration: none;
   letter-spacing: -0.3px;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
-nav.site-nav a:not(.nav-brand) {
+nav.site-nav .nav-links {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--surface2);
+}
+
+nav.site-nav .nav-links::-webkit-scrollbar {
+  height: 8px;
+}
+
+nav.site-nav .nav-links::-webkit-scrollbar-track {
+  background: var(--surface2);
+}
+
+nav.site-nav .nav-links::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+nav.site-nav .nav-links a {
   text-decoration: none;
   color: var(--muted);
   font-size: 0.82rem;
@@ -58,13 +83,28 @@ nav.site-nav a:not(.nav-brand) {
   border-bottom: 2px solid transparent;
   transition: color 0.15s, border-color 0.15s;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
-nav.site-nav a:not(.nav-brand):hover { color: var(--text); }
+nav.site-nav .nav-links a:hover { color: var(--text); }
 
 nav.site-nav a.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+@media (max-width: 700px) {
+  nav.site-nav {
+    padding: 0 12px;
+  }
+
+  nav.site-nav .nav-brand {
+    margin-right: 16px;
+  }
+
+  nav.site-nav .nav-links a {
+    padding: 0 10px;
+  }
 }
 
 /* ── Page content ── */

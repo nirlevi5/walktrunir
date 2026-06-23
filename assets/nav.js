@@ -20,13 +20,17 @@
   brand.textContent = 'Walktru · Home Assignment';
   nav.appendChild(brand);
 
+  const links = document.createElement('div');
+  links.className = 'nav-links';
+
   pages.forEach(({ href, label }) => {
     const a = document.createElement('a');
     a.href = href;
     a.textContent = label;
     if (href === current) a.className = 'active';
-    nav.appendChild(a);
+    links.appendChild(a);
   });
 
+  nav.appendChild(links);
   document.body.prepend(nav);
 })();
